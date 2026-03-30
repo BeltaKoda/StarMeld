@@ -35,6 +35,7 @@
         <nav class="tab-nav">
             <button class="tab-btn active" data-tab="merge">Merge Tool</button>
             <button class="tab-btn" data-tab="browser">Category Browser</button>
+            <button class="tab-btn" data-tab="compare">Compare Items</button>
         </nav>
 
         <!-- ==================== MERGE TAB ==================== -->
@@ -88,6 +89,7 @@
                         <div class="custom-packs" id="custom-packs">
                             <!-- Populated by app.js -->
                         </div>
+                        <button class="btn suggest-btn" id="suggest-pack-btn">Suggest a Language Pack</button>
                     </div>
                 </div>
             </section>
@@ -98,7 +100,7 @@
                     <h2>Category Selection</h2>
                 </div>
                 <div class="section-body">
-                    <p class="section-hint">Choose which language pack to use for each category. Set an entire group at once using the group dropdown, or override individual categories below it.</p>
+                    <p class="section-hint">Choose which language pack to use for each category. Set an entire group at once using the group dropdown, or override individual categories below it. <strong>Tip:</strong> Start by clicking &ldquo;Set as Default for All Categories&rdquo; on your preferred pack, then fine-tune individual categories as needed.</p>
                     <div class="category-tree" id="category-tree">
                         <div class="category-empty">Load a stock file and enable at least one language pack to see categories.</div>
                     </div>
@@ -146,6 +148,7 @@
                 </div>
                 <div class="section-body">
                     <p class="section-hint">Search the complete key database to see which category each localization key belongs to. Searches both key names and values.</p>
+                    <p class="disclaimer">Values shown are from the stock (vanilla) global.ini. Modified values from language packs are not displayed here to keep the browser fast.</p>
                     <div class="db-search">
                         <input type="text" id="db-search-input" placeholder="Search by key or value (e.g., item_NameCOOL, Panther, Bracer)..." class="search-input">
                         <span class="db-search-count" id="db-search-count"></span>
@@ -157,12 +160,50 @@
             </section>
         </div>
 
+        <!-- ==================== COMPARE ITEMS TAB ==================== -->
+        <div id="tab-compare" class="tab-content">
+            <section class="section">
+                <div class="section-header">
+                    <h2>Compare Items</h2>
+                </div>
+                <div class="section-body">
+                    <p class="section-hint">Compare how different language packs modify the same keys. Enable packs on the Merge Tool tab first.</p>
+                    <div class="compare-controls">
+                        <input type="text" id="compare-search-input" placeholder="Search by key or value (e.g., Bracer, Panther, bounty)..." class="search-input">
+                        <div class="compare-packs" id="compare-packs">
+                            <!-- Populated by app.js -->
+                        </div>
+                    </div>
+                    <span class="db-search-count" id="compare-search-count"></span>
+                    <div class="compare-results" id="compare-results">
+                        <div class="category-empty">Enable language packs on the Merge Tool tab, then search to compare.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
         <!-- Footer -->
         <footer class="footer">
             StarMeld by <a href="https://github.com/BeltaKoda" target="_blank">BeltaKoda</a>
             &mdash;
             <a href="https://github.com/BeltaKoda/StarMeld" target="_blank">Source on GitHub</a>
         </footer>
+    </div>
+
+    <!-- Download Confirmation Modal -->
+    <div class="modal-overlay" id="download-modal">
+        <div class="modal">
+            <h3>Confirm Download</h3>
+            <p>You are about to download a merged <code>global.ini</code> using the following sources. Please confirm you have reviewed these sources and trust they contain no malicious code.</p>
+            <ul class="modal-source-list" id="modal-source-list">
+                <!-- Populated by app.js -->
+            </ul>
+            <p class="modal-tip">If you're unsure about any source, paste the GitHub links into Claude or Gemini and ask them to inspect the code for you. You can also open your browser's Developer Tools (F12 &rarr; Network tab) to verify that all requests go to <code>raw.githubusercontent.com</code> and match the URLs listed above.</p>
+            <div class="modal-actions">
+                <button class="btn" id="modal-cancel-btn">Cancel</button>
+                <button class="btn btn-primary" id="modal-confirm-btn">Confirm &amp; Download</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="js/app.js"></script>

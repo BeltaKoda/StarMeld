@@ -16,8 +16,8 @@ class StarMeldApp {
         this.stockMode = 'github';
         this.customPacks = new Map();
         this.enabledSources = new Set();
-        this.categorySelections = new Map(); // category -> sourceName
-        this.categoryDbData = null; // pre-built category DB for browser tab
+        this.categorySelections = new Map();
+        this.categoryDbData = null;
     }
 
     async init() {
@@ -66,8 +66,27 @@ class StarMeldApp {
             document.getElementById('custom-pack-input').click();
         });
 
-        // Merge button
-        document.getElementById('merge-btn').addEventListener('click', () => this.doMerge());
+        // Suggest language pack button
+        document.getElementById('suggest-pack-btn').addEventListener('click', () => {
+            const title = encodeURIComponent('Suggest a language pack');
+            const body = encodeURIComponent(
+                `**Pack name:** \n**GitHub URL or download link:** \n**What does this pack do?** \n\n**Why should it be added to StarMeld?** \n`
+            );
+            window.open(`https://github.com/BeltaKoda/StarMeld/issues/new?title=${title}&body=${body}&labels=suggest-source`, '_blank');
+        });
+
+        // Merge button — show confirmation modal instead of downloading
+        document.getElementById('merge-btn').addEventListener('click', () => this.showDownloadModal());
+
+        // Modal buttons
+        document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+            this.hideDownloadModal();
+            this.doMerge();
+        });
+        document.getElementById('modal-cancel-btn').addEventListener('click', () => this.hideDownloadModal());
+        document.getElementById('download-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this.hideDownloadModal();
+        });
 
         // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -76,15 +95,28 @@ class StarMeldApp {
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+
+                // Refresh compare tab pack checkboxes when switching to it
+                if (btn.dataset.tab === 'compare') {
+                    this.renderComparePackSelector();
+                }
             });
         });
 
         // Category browser search
-        const searchInput = document.getElementById('db-search-input');
-        let searchTimeout;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => this.searchCategoryDb(searchInput.value), 200);
+        const dbSearchInput = document.getElementById('db-search-input');
+        let dbSearchTimeout;
+        dbSearchInput.addEventListener('input', () => {
+            clearTimeout(dbSearchTimeout);
+            dbSearchTimeout = setTimeout(() => this.searchCategoryDb(dbSearchInput.value), 200);
+        });
+
+        // Compare tab search
+        const compareSearchInput = document.getElementById('compare-search-input');
+        let compareSearchTimeout;
+        compareSearchInput.addEventListener('input', () => {
+            clearTimeout(compareSearchTimeout);
+            compareSearchTimeout = setTimeout(() => this.searchCompare(compareSearchInput.value), 200);
         });
     }
 
@@ -132,11 +164,19 @@ class StarMeldApp {
 
     // --- Language Pack Management ---
 
+    /**
+     * Get source definition by ID (for looking up repo/url).
+     */
+    getSourceDef(sourceId) {
+        return LANGUAGE_PACK_SOURCES.find(s => s.id === sourceId) || null;
+    }
+
     renderPackList() {
         const container = document.getElementById('github-packs');
         container.innerHTML = '';
 
         for (const source of LANGUAGE_PACK_SOURCES) {
+            const repoUrl = `https://github.com/${source.repo}`;
             const card = document.createElement('div');
             card.className = 'pack-card';
             card.id = `pack-${source.id}`;
@@ -145,8 +185,13 @@ class StarMeldApp {
                 <div class="pack-info">
                     <div class="pack-name">${source.name}</div>
                     <div class="pack-desc">${source.description}</div>
+                    <div class="pack-links">
+                        <a href="${repoUrl}" target="_blank">GitHub Repo</a>
+                        <a href="${source.url}" target="_blank">View INI File</a>
+                    </div>
                     <div class="pack-stats" id="stats-${source.id}"></div>
                     <div class="pack-status" id="status-${source.id}"></div>
+                    <div id="actions-${source.id}"></div>
                 </div>
             `;
             container.appendChild(card);
@@ -173,6 +218,7 @@ class StarMeldApp {
         this.enabledSources.add(source.id);
         const statusEl = document.getElementById(`status-${source.id}`);
         const statsEl = document.getElementById(`stats-${source.id}`);
+        const actionsEl = document.getElementById(`actions-${source.id}`);
 
         statusEl.innerHTML = '<span class="status status-loading"><span class="spinner"></span>Fetching...</span>';
 
@@ -198,6 +244,14 @@ class StarMeldApp {
                 statsEl.textContent = `${modifiedKeys.toLocaleString()} keys differ across ${modifiedCategories} categories`;
             }
 
+            // Add "Set as Default" button
+            actionsEl.innerHTML = '';
+            const defaultBtn = document.createElement('button');
+            defaultBtn.className = 'set-default-btn';
+            defaultBtn.textContent = 'Set as Default for All Categories';
+            defaultBtn.addEventListener('click', () => this.setAllToSource(source.id));
+            actionsEl.appendChild(defaultBtn);
+
             this.renderCategoryTree();
             this.updateMergeButton();
         } catch (err) {
@@ -211,9 +265,26 @@ class StarMeldApp {
         this.mergeEngine.removeImport(source.id);
         document.getElementById(`stats-${source.id}`).textContent = '';
         document.getElementById(`status-${source.id}`).innerHTML = '';
+        document.getElementById(`actions-${source.id}`).innerHTML = '';
 
         for (const [cat, src] of this.categorySelections) {
             if (src === source.id) this.categorySelections.delete(cat);
+        }
+
+        this.renderCategoryTree();
+        this.updateMergeButton();
+    }
+
+    /**
+     * Set ALL categories to a given source (where it has modifications).
+     */
+    setAllToSource(sourceId) {
+        if (!this.stockLoaded) return;
+        const allDiffs = this.mergeEngine.getAllCategoryDiffs();
+        const hierarchy = this.categoryDB.getHierarchy();
+
+        for (const group of hierarchy) {
+            this.setGroupSelection(group.name, sourceId, allDiffs);
         }
 
         this.renderCategoryTree();
@@ -276,11 +347,15 @@ class StarMeldApp {
                     <div class="pack-name">${pack.name}</div>
                     <div class="pack-stats">${statsText}</div>
                 </div>
+                <button class="set-default-btn" data-id="${id}">Set as Default</button>
                 <button class="remove-btn" data-id="${id}">Remove</button>
             `;
 
             card.querySelector('.remove-btn').addEventListener('click', () => {
                 this.removeCustomPack(id);
+            });
+            card.querySelector('.set-default-btn').addEventListener('click', () => {
+                this.setAllToSource(id);
             });
 
             container.appendChild(card);
@@ -298,9 +373,6 @@ class StarMeldApp {
         return sourceId;
     }
 
-    /**
-     * Set all categories within a group to a given source.
-     */
     setGroupSelection(groupName, sourceId, allDiffs) {
         const hierarchy = this.categoryDB.getHierarchy();
         const group = hierarchy.find(g => g.name === groupName);
@@ -308,7 +380,6 @@ class StarMeldApp {
 
         for (const cat of group.categories) {
             if (sourceId) {
-                // Only set if this source actually modifies this category
                 let hasModifications = false;
                 for (const [srcName, diffs] of allDiffs) {
                     if (srcName === sourceId) {
@@ -345,8 +416,7 @@ class StarMeldApp {
             let groupHasModifications = false;
             let groupModifiedCount = 0;
 
-            // Collect all sources that modify any category in this group
-            const groupSourcesMap = new Map(); // sourceId -> total modified keys in group
+            const groupSourcesMap = new Map();
             for (const cat of group.categories) {
                 for (const [sourceName, diffs] of allDiffs) {
                     const catDiff = diffs.get(cat.name);
@@ -362,7 +432,6 @@ class StarMeldApp {
             const groupEl = document.createElement('div');
             groupEl.className = 'category-group';
 
-            // Group header with its own source dropdown
             const headerEl = document.createElement('div');
             headerEl.className = 'group-header' + (groupHasModifications ? ' expanded' : '');
 
@@ -384,7 +453,6 @@ class StarMeldApp {
             headerEl.appendChild(nameSpan);
             headerEl.appendChild(statsSpan);
 
-            // Group-level source dropdown
             if (groupHasModifications) {
                 const groupSourceEl = document.createElement('div');
                 groupSourceEl.className = 'group-source';
@@ -396,13 +464,26 @@ class StarMeldApp {
                     groupSelect.innerHTML += `<option value="${srcId}">${displayName} (${count})</option>`;
                 }
 
-                groupSelect.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Don't toggle expand/collapse
+                // Detect if all modifiable categories share the same selection
+                const modifiableCats = group.categories.filter(cat => {
+                    for (const [, diffs] of allDiffs) {
+                        const catDiff = diffs.get(cat.name);
+                        if (catDiff && catDiff.modified > 0) return true;
+                    }
+                    return false;
                 });
+                if (modifiableCats.length > 0) {
+                    const selections = modifiableCats.map(cat => this.categorySelections.get(cat.name) || '');
+                    if (selections.every(s => s && s === selections[0])) {
+                        groupSelect.value = selections[0];
+                    }
+                }
+
+                groupSelect.addEventListener('click', (e) => e.stopPropagation());
 
                 groupSelect.addEventListener('change', () => {
                     this.setGroupSelection(group.name, groupSelect.value || '', allDiffs);
-                    this.renderCategoryTree(); // Re-render to update child dropdowns
+                    this.renderCategoryTree();
                     this.updateMergeButton();
                 });
 
@@ -413,7 +494,6 @@ class StarMeldApp {
             const categoriesEl = document.createElement('div');
             categoriesEl.className = 'group-categories' + (groupHasModifications ? ' expanded' : '');
 
-            // Toggle expand/collapse on header click (but not on dropdown)
             headerEl.addEventListener('click', (e) => {
                 if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
                 headerEl.classList.toggle('expanded');
@@ -491,6 +571,44 @@ class StarMeldApp {
         }
     }
 
+    // --- Download Modal ---
+
+    showDownloadModal() {
+        if (!this.stockLoaded || this.categorySelections.size === 0) return;
+
+        const list = document.getElementById('modal-source-list');
+        list.innerHTML = '';
+
+        // Collect unique sources used in selections
+        const usedSourceIds = new Set(this.categorySelections.values());
+
+        for (const sourceId of usedSourceIds) {
+            const li = document.createElement('li');
+            const sourceDef = this.getSourceDef(sourceId);
+
+            if (sourceDef) {
+                const repoUrl = `https://github.com/${sourceDef.repo}`;
+                li.innerHTML = `
+                    <span class="source-label">${sourceDef.name}</span>
+                    <a href="${repoUrl}" target="_blank">GitHub Repo</a>
+                    <a href="${sourceDef.url}" target="_blank">View INI File</a>
+                `;
+            } else {
+                const custom = this.customPacks.get(sourceId);
+                const name = custom ? custom.name : sourceId;
+                li.innerHTML = `<span class="source-label">${name}</span> (uploaded from your computer)`;
+            }
+
+            list.appendChild(li);
+        }
+
+        document.getElementById('download-modal').classList.add('visible');
+    }
+
+    hideDownloadModal() {
+        document.getElementById('download-modal').classList.remove('visible');
+    }
+
     // --- Merge ---
 
     updateMergeButton() {
@@ -524,10 +642,10 @@ class StarMeldApp {
     async loadCategoryDb() {
         try {
             const response = await fetch('data/category_db.json');
-            if (!response.ok) return; // Not fatal if it doesn't exist yet
+            if (!response.ok) return;
             this.categoryDbData = await response.json();
         } catch {
-            // category_db.json not available, browser tab will show a message
+            // Not fatal
         }
     }
 
@@ -553,7 +671,6 @@ class StarMeldApp {
         const matches = [];
         const MAX_RESULTS = 200;
 
-        // Search both key names and values (if stock is loaded)
         const stockData = this.mergeEngine?.stock;
 
         for (const [key, info] of Object.entries(keys)) {
@@ -602,7 +719,6 @@ class StarMeldApp {
             );
             const issueUrl = `https://github.com/BeltaKoda/StarMeld/issues/new?title=${issueTitle}&body=${issueBody}&labels=category-correction`;
 
-            // Truncate long values for display
             const displayValue = match.value && match.value.length > 80
                 ? match.value.substring(0, 80) + '...'
                 : (match.value || '');
@@ -612,8 +728,137 @@ class StarMeldApp {
                 <td class="value-cell">${displayValue}</td>
                 <td class="cat-cell">${match.category}</td>
                 <td class="group-cell">${match.group}</td>
-                <td class="report-cell"><a href="${issueUrl}" target="_blank" class="report-link" title="Report incorrect category">Report</a></td>
+                <td class="report-cell"><a href="${issueUrl}" target="_blank" class="report-link" title="Report incorrect category">Report Incorrect Category</a></td>
             `;
+            tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+
+    // --- Compare Items ---
+
+    renderComparePackSelector() {
+        const container = document.getElementById('compare-packs');
+        container.innerHTML = '';
+
+        if (this.enabledSources.size === 0) {
+            container.innerHTML = '<span>No packs enabled</span>';
+            return;
+        }
+
+        for (const sourceId of this.enabledSources) {
+            const name = this.getSourceDisplayName(sourceId);
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" value="${sourceId}" checked> ${name}`;
+            label.querySelector('input').addEventListener('change', () => {
+                // Re-search with current query
+                const query = document.getElementById('compare-search-input').value;
+                if (query.trim().length >= 3) this.searchCompare(query);
+            });
+            container.appendChild(label);
+        }
+    }
+
+    getSelectedComparePacks() {
+        const checkboxes = document.querySelectorAll('#compare-packs input[type="checkbox"]');
+        const selected = [];
+        for (const cb of checkboxes) {
+            if (cb.checked) selected.push(cb.value);
+        }
+        return selected;
+    }
+
+    searchCompare(query) {
+        const container = document.getElementById('compare-results');
+        const countEl = document.getElementById('compare-search-count');
+        const trimmed = query.trim();
+
+        if (!this.stockLoaded) {
+            container.innerHTML = '<div class="category-empty">Stock file not loaded yet.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        if (this.enabledSources.size === 0) {
+            container.innerHTML = '<div class="category-empty">Enable language packs on the Merge Tool tab, then search to compare.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        if (trimmed.length < 3) {
+            container.innerHTML = '<div class="category-empty">Type at least 3 characters to search.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        const selectedPacks = this.getSelectedComparePacks();
+        if (selectedPacks.length === 0) {
+            container.innerHTML = '<div class="category-empty">Select at least one pack to compare.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        const lowerQuery = trimmed.toLowerCase();
+        const stockData = this.mergeEngine.stock;
+        const matches = [];
+        const MAX_RESULTS = 100;
+
+        for (const [key, stockValue] of stockData) {
+            if (key.toLowerCase().includes(lowerQuery) || stockValue.toLowerCase().includes(lowerQuery)) {
+                matches.push({ key, stockValue });
+                if (matches.length >= MAX_RESULTS) break;
+            }
+        }
+
+        countEl.textContent = matches.length >= MAX_RESULTS
+            ? `${MAX_RESULTS}+ matches (showing first ${MAX_RESULTS})`
+            : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
+
+        if (matches.length === 0) {
+            container.innerHTML = '<div class="category-empty">No keys found matching your search.</div>';
+            return;
+        }
+
+        // Build table with dynamic columns
+        const table = document.createElement('table');
+        table.className = 'compare-table';
+
+        let headerHtml = '<tr><th>Key</th><th>Stock</th>';
+        for (const packId of selectedPacks) {
+            headerHtml += `<th>${this.getSourceDisplayName(packId)}</th>`;
+        }
+        headerHtml += '</tr>';
+        table.innerHTML = `<thead>${headerHtml}</thead>`;
+
+        const tbody = document.createElement('tbody');
+        for (const match of matches) {
+            const tr = document.createElement('tr');
+
+            const stockDisplay = match.stockValue.length > 60
+                ? match.stockValue.substring(0, 60) + '...'
+                : match.stockValue;
+
+            let html = `<td class="key-cell">${match.key}</td>`;
+            html += `<td class="stock-cell">${stockDisplay}</td>`;
+
+            for (const packId of selectedPacks) {
+                const importData = this.mergeEngine.imports.get(packId);
+                const importValue = importData ? importData.get(match.key) : undefined;
+
+                if (importValue === undefined || importValue === match.stockValue) {
+                    html += '<td class="same-cell">(same)</td>';
+                } else {
+                    const display = importValue.length > 60
+                        ? importValue.substring(0, 60) + '...'
+                        : importValue;
+                    html += `<td class="modified-cell">${display}</td>`;
+                }
+            }
+
+            tr.innerHTML = html;
             tbody.appendChild(tr);
         }
 
