@@ -553,10 +553,20 @@ class StarMeldApp {
         const matches = [];
         const MAX_RESULTS = 200;
 
+        // Search both key names and values (if stock is loaded)
+        const stockData = this.mergeEngine?.stock;
+
         for (const [key, info] of Object.entries(keys)) {
             if (key.toLowerCase().includes(lowerQuery)) {
-                matches.push({ key, ...info });
+                const value = stockData ? (stockData.get(key) || '') : '';
+                matches.push({ key, value, ...info });
                 if (matches.length >= MAX_RESULTS) break;
+            } else if (stockData) {
+                const value = stockData.get(key) || '';
+                if (value.toLowerCase().includes(lowerQuery)) {
+                    matches.push({ key, value, ...info });
+                    if (matches.length >= MAX_RESULTS) break;
+                }
             }
         }
 
@@ -575,6 +585,7 @@ class StarMeldApp {
             <thead>
                 <tr>
                     <th>Key</th>
+                    <th>Value</th>
                     <th>Category</th>
                     <th>Group</th>
                     <th></th>
@@ -591,8 +602,14 @@ class StarMeldApp {
             );
             const issueUrl = `https://github.com/BeltaKoda/StarMeld/issues/new?title=${issueTitle}&body=${issueBody}&labels=category-correction`;
 
+            // Truncate long values for display
+            const displayValue = match.value && match.value.length > 80
+                ? match.value.substring(0, 80) + '...'
+                : (match.value || '');
+
             tr.innerHTML = `
                 <td class="key-cell">${match.key}</td>
+                <td class="value-cell">${displayValue}</td>
                 <td class="cat-cell">${match.category}</td>
                 <td class="group-cell">${match.group}</td>
                 <td class="report-cell"><a href="${issueUrl}" target="_blank" class="report-link" title="Report incorrect category">Report</a></td>

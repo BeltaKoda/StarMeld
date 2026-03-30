@@ -694,7 +694,15 @@ body {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     color: var(--text-primary);
     word-break: break-all;
-    max-width: 400px;
+    max-width: 350px;
+}
+
+.db-table .value-cell {
+    color: var(--text-secondary);
+    font-size: 11px;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .db-table .cat-cell {
