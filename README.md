@@ -42,6 +42,19 @@ Star Citizen loads exactly one `global.ini` file. Missing keys display as raw `@
 | **MrKraken StarStrings** | Mission text, blueprint pools, commodity fixes, UI overflow corrections |
 | **Custom Upload** | Any `global.ini` file you want to merge |
 
+## How It Works / Security
+
+StarMeld is designed to be completely transparent and safe to use:
+
+- **100% client-side** -- All processing happens in your browser using JavaScript. No server-side code, no backend, no database. Your files never leave your machine.
+- **No uploads** -- Nothing you load or merge is sent anywhere. The only network requests are `fetch()` calls to `raw.githubusercontent.com` (GitHub's CDN) to download the pre-populated INI files. You can verify this yourself by opening your browser's Developer Tools (F12) and checking the Network tab.
+- **No tracking** -- No cookies, no analytics, no localStorage, no session storage. StarMeld stores nothing and tracks nothing.
+- **No executables** -- The output is a plain text `.ini` file. There is no installer, no binary, nothing that runs on your system.
+- **Fully open source** -- Every line of code is visible in this repository. The entire application is vanilla HTML, CSS, and JavaScript with zero dependencies or build steps. What you see in the repo is exactly what runs in your browser.
+- **GitHub Pages hosted** -- The site is served as static files by GitHub Pages. There is no server to compromise.
+
+If you're security-conscious, you can also clone this repo and run it locally (`python3 -m http.server` in the repo directory) -- it works identically offline once the INI files are loaded.
+
 ## Roadmap
 
 ### Phase 1: Web App (current)

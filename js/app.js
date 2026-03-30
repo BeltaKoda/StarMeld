@@ -13,10 +13,11 @@ class StarMeldApp {
         this.categoryDB = new CategoryDB();
         this.mergeEngine = null;
         this.stockLoaded = false;
-        this.stockMode = 'github';  // 'github' or 'custom'
-        this.customPacks = new Map(); // id -> {name, data}
+        this.stockMode = 'github';
+        this.customPacks = new Map();
         this.enabledSources = new Set();
         this.categorySelections = new Map(); // category -> sourceName
+        this.categoryDbData = null; // pre-built category DB for browser tab
     }
 
     async init() {
@@ -24,8 +25,8 @@ class StarMeldApp {
         this.mergeEngine = new MergeEngine(this.categoryDB);
         this.bindEvents();
         this.renderPackList();
-        // Auto-load stock from GitHub by default
         this.loadStockFromGitHub();
+        this.loadCategoryDb();
     }
 
     bindEvents() {
@@ -67,6 +68,24 @@ class StarMeldApp {
 
         // Merge button
         document.getElementById('merge-btn').addEventListener('click', () => this.doMerge());
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Category browser search
+        const searchInput = document.getElementById('db-search-input');
+        let searchTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => this.searchCategoryDb(searchInput.value), 200);
+        });
     }
 
     // --- Stock Loading ---
@@ -193,7 +212,6 @@ class StarMeldApp {
         document.getElementById(`stats-${source.id}`).textContent = '';
         document.getElementById(`status-${source.id}`).innerHTML = '';
 
-        // Clear selections that referenced this source
         for (const [cat, src] of this.categorySelections) {
             if (src === source.id) this.categorySelections.delete(cat);
         }
@@ -280,6 +298,36 @@ class StarMeldApp {
         return sourceId;
     }
 
+    /**
+     * Set all categories within a group to a given source.
+     */
+    setGroupSelection(groupName, sourceId, allDiffs) {
+        const hierarchy = this.categoryDB.getHierarchy();
+        const group = hierarchy.find(g => g.name === groupName);
+        if (!group) return;
+
+        for (const cat of group.categories) {
+            if (sourceId) {
+                // Only set if this source actually modifies this category
+                let hasModifications = false;
+                for (const [srcName, diffs] of allDiffs) {
+                    if (srcName === sourceId) {
+                        const catDiff = diffs.get(cat.name);
+                        if (catDiff && catDiff.modified > 0) {
+                            hasModifications = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasModifications) {
+                    this.categorySelections.set(cat.name, sourceId);
+                }
+            } else {
+                this.categorySelections.delete(cat.name);
+            }
+        }
+    }
+
     renderCategoryTree() {
         const container = document.getElementById('category-tree');
 
@@ -294,16 +342,19 @@ class StarMeldApp {
         container.innerHTML = '';
 
         for (const group of hierarchy) {
-            // Check if any category in this group has modifications
             let groupHasModifications = false;
             let groupModifiedCount = 0;
 
+            // Collect all sources that modify any category in this group
+            const groupSourcesMap = new Map(); // sourceId -> total modified keys in group
             for (const cat of group.categories) {
-                for (const [, diffs] of allDiffs) {
+                for (const [sourceName, diffs] of allDiffs) {
                     const catDiff = diffs.get(cat.name);
                     if (catDiff && catDiff.modified > 0) {
                         groupHasModifications = true;
                         groupModifiedCount += catDiff.modified;
+                        groupSourcesMap.set(sourceName,
+                            (groupSourcesMap.get(sourceName) || 0) + catDiff.modified);
                     }
                 }
             }
@@ -311,24 +362,65 @@ class StarMeldApp {
             const groupEl = document.createElement('div');
             groupEl.className = 'category-group';
 
+            // Group header with its own source dropdown
             const headerEl = document.createElement('div');
             headerEl.className = 'group-header' + (groupHasModifications ? ' expanded' : '');
-            headerEl.innerHTML = `
-                <span class="arrow">\u25B6</span>
-                <span class="group-name">${group.name}</span>
-                <span class="group-stats">${groupHasModifications ? groupModifiedCount.toLocaleString() + ' modified' : 'no changes'}</span>
-            `;
+
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'arrow';
+            arrowSpan.textContent = '\u25B6';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'group-name';
+            nameSpan.textContent = group.name;
+
+            const statsSpan = document.createElement('span');
+            statsSpan.className = 'group-stats';
+            statsSpan.textContent = groupHasModifications
+                ? groupModifiedCount.toLocaleString() + ' modified'
+                : 'no changes';
+
+            headerEl.appendChild(arrowSpan);
+            headerEl.appendChild(nameSpan);
+            headerEl.appendChild(statsSpan);
+
+            // Group-level source dropdown
+            if (groupHasModifications) {
+                const groupSourceEl = document.createElement('div');
+                groupSourceEl.className = 'group-source';
+                const groupSelect = document.createElement('select');
+                groupSelect.innerHTML = '<option value="">Stock (default)</option>';
+
+                for (const [srcId, count] of groupSourcesMap) {
+                    const displayName = this.getSourceDisplayName(srcId);
+                    groupSelect.innerHTML += `<option value="${srcId}">${displayName} (${count})</option>`;
+                }
+
+                groupSelect.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Don't toggle expand/collapse
+                });
+
+                groupSelect.addEventListener('change', () => {
+                    this.setGroupSelection(group.name, groupSelect.value || '', allDiffs);
+                    this.renderCategoryTree(); // Re-render to update child dropdowns
+                    this.updateMergeButton();
+                });
+
+                groupSourceEl.appendChild(groupSelect);
+                headerEl.appendChild(groupSourceEl);
+            }
 
             const categoriesEl = document.createElement('div');
             categoriesEl.className = 'group-categories' + (groupHasModifications ? ' expanded' : '');
 
-            headerEl.addEventListener('click', () => {
+            // Toggle expand/collapse on header click (but not on dropdown)
+            headerEl.addEventListener('click', (e) => {
+                if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
                 headerEl.classList.toggle('expanded');
                 categoriesEl.classList.toggle('expanded');
             });
 
             for (const cat of group.categories) {
-                // Find which sources modify this category
                 const sourcesWithMods = [];
                 let totalMods = 0;
 
@@ -350,7 +442,9 @@ class StarMeldApp {
 
                 const modEl = document.createElement('div');
                 modEl.className = 'category-modified' + (totalMods === 0 ? ' none' : '');
-                modEl.textContent = totalMods > 0 ? `${totalMods} keys` : 'no changes';
+                modEl.textContent = totalMods > 0
+                    ? `${totalMods} ${totalMods === 1 ? 'key' : 'keys'}`
+                    : 'no changes';
 
                 const sourceEl = document.createElement('div');
                 sourceEl.className = 'category-source';
@@ -363,7 +457,6 @@ class StarMeldApp {
                         select.innerHTML += `<option value="${s.id}">${displayName} (${s.count})</option>`;
                     }
 
-                    // Restore previous selection if still valid
                     const prevSelection = this.categorySelections.get(cat.name);
                     if (prevSelection && sourcesWithMods.some(s => s.id === prevSelection)) {
                         select.value = prevSelection;
@@ -426,10 +519,95 @@ class StarMeldApp {
         summary.innerHTML = `Downloaded! <strong>${stats.overriddenKeys.toLocaleString()}</strong> keys overridden across <strong>${stats.categoriesOverridden}</strong> categories (${stats.totalKeys.toLocaleString()} total keys)`;
     }
 
+    // --- Category Browser ---
+
+    async loadCategoryDb() {
+        try {
+            const response = await fetch('data/category_db.json');
+            if (!response.ok) return; // Not fatal if it doesn't exist yet
+            this.categoryDbData = await response.json();
+        } catch {
+            // category_db.json not available, browser tab will show a message
+        }
+    }
+
+    searchCategoryDb(query) {
+        const container = document.getElementById('db-results');
+        const countEl = document.getElementById('db-search-count');
+        const trimmed = query.trim();
+
+        if (!this.categoryDbData) {
+            container.innerHTML = '<div class="category-empty">Category database not loaded. Run <code>scripts/build_category_db.py</code> to generate it.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        if (trimmed.length < 3) {
+            container.innerHTML = '<div class="category-empty">Type at least 3 characters to search.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        const lowerQuery = trimmed.toLowerCase();
+        const keys = this.categoryDbData.keys;
+        const matches = [];
+        const MAX_RESULTS = 200;
+
+        for (const [key, info] of Object.entries(keys)) {
+            if (key.toLowerCase().includes(lowerQuery)) {
+                matches.push({ key, ...info });
+                if (matches.length >= MAX_RESULTS) break;
+            }
+        }
+
+        countEl.textContent = matches.length >= MAX_RESULTS
+            ? `${MAX_RESULTS}+ matches (showing first ${MAX_RESULTS})`
+            : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
+
+        if (matches.length === 0) {
+            container.innerHTML = '<div class="category-empty">No keys found matching your search.</div>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'db-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Category</th>
+                    <th>Group</th>
+                    <th></th>
+                </tr>
+            </thead>
+        `;
+
+        const tbody = document.createElement('tbody');
+        for (const match of matches) {
+            const tr = document.createElement('tr');
+            const issueTitle = encodeURIComponent(`Category correction: ${match.key}`);
+            const issueBody = encodeURIComponent(
+                `**Key:** \`${match.key}\`\n**Current category:** ${match.category}\n**Current group:** ${match.group}\n\n**Suggested category:** \n**Reason:** \n`
+            );
+            const issueUrl = `https://github.com/BeltaKoda/StarMeld/issues/new?title=${issueTitle}&body=${issueBody}&labels=category-correction`;
+
+            tr.innerHTML = `
+                <td class="key-cell">${match.key}</td>
+                <td class="cat-cell">${match.category}</td>
+                <td class="group-cell">${match.group}</td>
+                <td class="report-cell"><a href="${issueUrl}" target="_blank" class="report-link" title="Report incorrect category">Report</a></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+
     // --- Refresh ---
 
     refreshAll() {
-        // Re-diff all loaded imports against new stock
         for (const source of LANGUAGE_PACK_SOURCES) {
             if (this.enabledSources.has(source.id) && this.mergeEngine.imports.has(source.id)) {
                 const diff = this.mergeEngine.getCategoryDiff(source.id);

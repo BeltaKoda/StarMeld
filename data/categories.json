@@ -109,6 +109,11 @@
           "description": "Trade commodities and raw materials"
         },
         {
+          "name": "Item Subtypes",
+          "patterns": ["^item_(?:SubType|Type)"],
+          "description": "Item type and subtype classifications"
+        },
+        {
           "name": "Other Items",
           "patterns": ["^item_Name"],
           "description": "All other items (flairs, tools, ammo, etc.)"
@@ -170,7 +175,7 @@
         },
         {
           "name": "General UI",
-          "patterns": ["^(?:ui_|UI_|PU_UI_|ea_ui_|dfm_ui_|pause_|chat_|FreightElevator)"],
+          "patterns": ["^(?:ui_|UI_|PU_UI_|ea_ui_|dfm_ui_|pause_|chat_|FreightElevator|Frontend_)"],
           "description": "General interface text, menus, chat, and error messages"
         }
       ]
@@ -185,7 +190,7 @@
         },
         {
           "name": "Contracts & Factions",
-          "patterns": ["^(?:headhunters_|Headhunters_|Covalex_|DataHeist|TheCollector|Hockrow|vaughn|Foxwell|GoblinG|storm_|cfp_|CFP_|Shubin_|MiningClaim|DynamicEvent|RR_|ASD_|planetcollect)"],
+          "patterns": ["^(?:headhunters_|Headhunters_|Covalex_|DataHeist|TheCollector|Hockrow|vaughn|Foxwell|GoblinG|storm_|cfp_|CFP_|Shubin_|MiningClaim|DynamicEvent|RR_|ASD_|planetcollect|BitZeros|FTL_|RedWind|deadsaints|EckhartSecurity|Kaboos|KillShip|boarders_|ShipAmbush|ShipWaveAttack|bounty_fps|DefendShips|HaulCargo|hauling_)"],
           "description": "Contractor missions, faction-specific text, and dynamic events"
         },
         {
@@ -212,6 +217,81 @@
           "name": "Infractions",
           "patterns": ["^Infractions_"],
           "description": "Law system infraction names and descriptions"
+        },
+        {
+          "name": "Journals",
+          "patterns": ["^Journal_"],
+          "description": "In-game newspaper and journal entries"
+        },
+        {
+          "name": "Holiday Events",
+          "patterns": ["^(?:Luminalia|iae\\d+)_"],
+          "description": "Seasonal and holiday event content"
+        },
+        {
+          "name": "PU Narrative",
+          "patterns": ["^PU_(?!UI_)"],
+          "description": "Persistent Universe narrative text, NPC comms, and mission dialogue"
+        }
+      ]
+    },
+    {
+      "name": "Data & System",
+      "categories": [
+        {
+          "name": "Human Names",
+          "patterns": ["^Human_"],
+          "description": "NPC name generation (surnames, first names, nicknames)"
+        },
+        {
+          "name": "Voice & Audio",
+          "patterns": ["^(?:DXSM_|DXSH_|PH_)"],
+          "description": "Voice line subtitles, audio cue text, and phoneme data"
+        },
+        {
+          "name": "Input Bindings",
+          "patterns": ["^input_"],
+          "description": "Key binding and control input labels"
+        },
+        {
+          "name": "Manufacturers",
+          "patterns": ["^manufacturer_"],
+          "description": "Ship and component manufacturer names"
+        },
+        {
+          "name": "Arena Commander",
+          "patterns": ["^(?:dfm_|ea_|SC_|Maps_)"],
+          "description": "Arena Commander and Star Marine mode text"
+        },
+        {
+          "name": "Item Ports",
+          "patterns": ["^itemPort_"],
+          "description": "Item port and hardpoint labels"
+        },
+        {
+          "name": "Medical",
+          "patterns": ["^med_"],
+          "description": "Medical system and healing text"
+        },
+        {
+          "name": "Engineering",
+          "patterns": ["^engineering_"],
+          "description": "Ship engineering and power management text"
+        },
+        {
+          "name": "Salvage",
+          "patterns": ["^salvage_"],
+          "description": "Salvage gameplay text"
+        },
+        {
+          "name": "Events & Ship Names",
+          "patterns": ["^(?:Event_|FW2022_|FW22_)"],
+          "description": "Fleet Week, events, and generated ship names"
+        },
+        {
+          "name": "Text & Misc System",
+          "patterns": ["^(?:text_|RN_|quantum_|interiormap_|SC_)"],
+          "description": "System text, quantum travel, and miscellaneous labels"
         }
       ]
     }
