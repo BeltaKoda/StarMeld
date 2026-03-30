@@ -17,6 +17,8 @@ class StarMeldApp {
         this.customPacks = new Map();
         this.enabledSources = new Set();
         this.categorySelections = new Map();
+        this.priorityOrder = [];
+        this.mergeMode = 'category';
         this.categoryDbData = null;
     }
 
@@ -75,8 +77,15 @@ class StarMeldApp {
             window.open(`https://github.com/BeltaKoda/StarMeld/issues/new?title=${title}&body=${body}&labels=suggest-source`, '_blank');
         });
 
-        // Merge button — show confirmation modal instead of downloading
-        document.getElementById('merge-btn').addEventListener('click', () => this.showDownloadModal());
+        // Merge buttons — show confirmation modal instead of downloading
+        document.getElementById('merge-btn').addEventListener('click', () => {
+            this.mergeMode = 'category';
+            this.showDownloadModal();
+        });
+        document.getElementById('priority-merge-btn').addEventListener('click', () => {
+            this.mergeMode = 'priority';
+            this.showDownloadModal();
+        });
 
         // Modal buttons
         document.getElementById('modal-confirm-btn').addEventListener('click', () => {
@@ -96,9 +105,13 @@ class StarMeldApp {
                 btn.classList.add('active');
                 document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
 
-                // Refresh compare tab pack checkboxes when switching to it
+                // Refresh tab-specific content when switching
                 if (btn.dataset.tab === 'compare') {
                     this.renderComparePackSelector();
+                }
+                if (btn.dataset.tab === 'priority') {
+                    this.renderPriorityList();
+                    this.updatePriorityStats();
                 }
             });
         });
@@ -252,8 +265,15 @@ class StarMeldApp {
             defaultBtn.addEventListener('click', () => this.setAllToSource(source.id));
             actionsEl.appendChild(defaultBtn);
 
+            if (!this.priorityOrder.includes(source.id)) {
+                this.priorityOrder.push(source.id);
+            }
+
             this.renderCategoryTree();
             this.updateMergeButton();
+            this.renderPriorityList();
+            this.updatePriorityStats();
+            this.updatePriorityMergeButton();
         } catch (err) {
             statusEl.innerHTML = `<span class="status status-error">Error: ${err.message}</span>`;
             this.enabledSources.delete(source.id);
@@ -270,9 +290,13 @@ class StarMeldApp {
         for (const [cat, src] of this.categorySelections) {
             if (src === source.id) this.categorySelections.delete(cat);
         }
+        this.priorityOrder = this.priorityOrder.filter(id => id !== source.id);
 
         this.renderCategoryTree();
         this.updateMergeButton();
+        this.renderPriorityList();
+        this.updatePriorityStats();
+        this.updatePriorityMergeButton();
     }
 
     /**
@@ -299,9 +323,13 @@ class StarMeldApp {
             this.mergeEngine.addImport(id, data);
             this.customPacks.set(id, { name: file.name, data });
             this.enabledSources.add(id);
+            this.priorityOrder.push(id);
             this.renderCustomPacks();
             this.renderCategoryTree();
             this.updateMergeButton();
+            this.renderPriorityList();
+            this.updatePriorityStats();
+            this.updatePriorityMergeButton();
         } catch (err) {
             console.error('Failed to load custom pack:', err);
         }
@@ -311,6 +339,7 @@ class StarMeldApp {
         this.mergeEngine.removeImport(id);
         this.customPacks.delete(id);
         this.enabledSources.delete(id);
+        this.priorityOrder = this.priorityOrder.filter(pid => pid !== id);
 
         for (const [cat, src] of this.categorySelections) {
             if (src === id) this.categorySelections.delete(cat);
@@ -574,13 +603,19 @@ class StarMeldApp {
     // --- Download Modal ---
 
     showDownloadModal() {
-        if (!this.stockLoaded || this.categorySelections.size === 0) return;
+        if (!this.stockLoaded) return;
+
+        let usedSourceIds;
+        if (this.mergeMode === 'priority') {
+            if (this.priorityOrder.length === 0) return;
+            usedSourceIds = new Set(this.priorityOrder);
+        } else {
+            if (this.categorySelections.size === 0) return;
+            usedSourceIds = new Set(this.categorySelections.values());
+        }
 
         const list = document.getElementById('modal-source-list');
         list.innerHTML = '';
-
-        // Collect unique sources used in selections
-        const usedSourceIds = new Set(this.categorySelections.values());
 
         for (const sourceId of usedSourceIds) {
             const li = document.createElement('li');
@@ -627,14 +662,146 @@ class StarMeldApp {
     }
 
     doMerge() {
-        if (!this.stockLoaded || this.categorySelections.size === 0) return;
+        if (!this.stockLoaded) return;
 
-        const { merged, stats } = this.mergeEngine.merge(this.categorySelections);
-        const content = serializeIni(merged);
-        downloadIni(content, 'global.ini');
+        if (this.mergeMode === 'priority') {
+            if (this.priorityOrder.length === 0) return;
+            const { merged, stats } = this.mergeEngine.mergePriority(this.priorityOrder);
+            const content = serializeIni(merged);
+            downloadIni(content, 'global.ini');
 
-        const summary = document.getElementById('merge-summary');
-        summary.innerHTML = `Downloaded! <strong>${stats.overriddenKeys.toLocaleString()}</strong> keys overridden across <strong>${stats.categoriesOverridden}</strong> categories (${stats.totalKeys.toLocaleString()} total keys)`;
+            const summary = document.getElementById('priority-merge-summary');
+            summary.innerHTML = `Downloaded! <strong>${stats.overriddenKeys.toLocaleString()}</strong> keys overridden from <strong>${stats.perSource.length}</strong> ${stats.perSource.length === 1 ? 'pack' : 'packs'} (${stats.totalKeys.toLocaleString()} total keys)`;
+        } else {
+            if (this.categorySelections.size === 0) return;
+            const { merged, stats } = this.mergeEngine.merge(this.categorySelections);
+            const content = serializeIni(merged);
+            downloadIni(content, 'global.ini');
+
+            const summary = document.getElementById('merge-summary');
+            summary.innerHTML = `Downloaded! <strong>${stats.overriddenKeys.toLocaleString()}</strong> keys overridden across <strong>${stats.categoriesOverridden}</strong> categories (${stats.totalKeys.toLocaleString()} total keys)`;
+        }
+    }
+
+    // --- Priority Merge ---
+
+    renderPriorityList() {
+        const container = document.getElementById('priority-list');
+        if (!container) return;
+
+        // Filter out any sources no longer enabled
+        this.priorityOrder = this.priorityOrder.filter(id => this.enabledSources.has(id));
+
+        if (this.priorityOrder.length === 0) {
+            container.innerHTML = '<div class="category-empty">Enable at least one language pack above to set priorities.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        this.priorityOrder.forEach((sourceId, index) => {
+            const sourceDef = this.getSourceDef(sourceId);
+            const custom = this.customPacks.get(sourceId);
+            const name = sourceDef ? sourceDef.name : (custom ? custom.name : sourceId);
+            const desc = sourceDef ? sourceDef.description : 'Custom upload';
+
+            const item = document.createElement('div');
+            item.className = 'priority-item';
+            item.innerHTML = `
+                <span class="priority-number">${index + 1}</span>
+                <span class="priority-name">${name}</span>
+                <span class="priority-desc">${desc}</span>
+                <div class="priority-arrows"></div>
+            `;
+
+            const arrows = item.querySelector('.priority-arrows');
+
+            const upBtn = document.createElement('button');
+            upBtn.textContent = '\u25B2';
+            upBtn.title = 'Move up (higher priority)';
+            upBtn.disabled = index === 0;
+            upBtn.addEventListener('click', () => this.movePriority(index, -1));
+            arrows.appendChild(upBtn);
+
+            const downBtn = document.createElement('button');
+            downBtn.textContent = '\u25BC';
+            downBtn.title = 'Move down (lower priority)';
+            downBtn.disabled = index === this.priorityOrder.length - 1;
+            downBtn.addEventListener('click', () => this.movePriority(index, 1));
+            arrows.appendChild(downBtn);
+
+            container.appendChild(item);
+        });
+    }
+
+    movePriority(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= this.priorityOrder.length) return;
+
+        const temp = this.priorityOrder[index];
+        this.priorityOrder[index] = this.priorityOrder[newIndex];
+        this.priorityOrder[newIndex] = temp;
+
+        this.renderPriorityList();
+        this.updatePriorityStats();
+        this.updatePriorityMergeButton();
+    }
+
+    updatePriorityStats() {
+        const container = document.getElementById('priority-stats');
+        if (!container) return;
+
+        if (!this.stockLoaded || this.priorityOrder.length === 0) {
+            container.innerHTML = '<div class="category-empty">Enable packs and set priority order to see merge statistics.</div>';
+            return;
+        }
+
+        const { overriddenKeys, perSource } = this.mergeEngine.computePriorityStats(this.priorityOrder);
+
+        container.innerHTML = '';
+
+        perSource.forEach((ps, index) => {
+            const sourceDef = this.getSourceDef(ps.sourceId);
+            const custom = this.customPacks.get(ps.sourceId);
+            const name = sourceDef ? sourceDef.name : (custom ? custom.name : ps.sourceId);
+
+            const row = document.createElement('div');
+            row.className = 'priority-stat-row';
+
+            let overlapText = '';
+            if (ps.overlapped > 0) {
+                overlapText = `<span class="stat-overlapped">(${ps.overlapped.toLocaleString()} overlapped by higher priority)</span>`;
+            }
+
+            row.innerHTML = `
+                <span class="stat-priority">${index + 1}</span>
+                <span class="stat-name">${name}</span>
+                <span class="stat-applied">${ps.applied.toLocaleString()} keys applied</span>
+                ${overlapText}
+            `;
+
+            container.appendChild(row);
+        });
+
+        const total = document.createElement('div');
+        total.className = 'priority-stat-total';
+        total.textContent = `Total: ${overriddenKeys.toLocaleString()} keys changed from stock`;
+        container.appendChild(total);
+    }
+
+    updatePriorityMergeButton() {
+        const btn = document.getElementById('priority-merge-btn');
+        const summary = document.getElementById('priority-merge-summary');
+        if (!btn || !summary) return;
+
+        const hasOrder = this.priorityOrder.length > 0;
+        btn.disabled = !this.stockLoaded || !hasOrder;
+
+        if (!hasOrder) {
+            summary.innerHTML = 'Set priority order to merge.';
+        } else {
+            summary.innerHTML = `<strong>${this.priorityOrder.length}</strong> ${this.priorityOrder.length === 1 ? 'pack' : 'packs'} in priority order &mdash; ready to merge.`;
+        }
     }
 
     // --- Category Browser ---
@@ -783,7 +950,7 @@ class StarMeldApp {
         }
 
         if (this.enabledSources.size === 0) {
-            container.innerHTML = '<div class="category-empty">Enable language packs on the Merge Tool tab, then search to compare.</div>';
+            container.innerHTML = '<div class="category-empty">Enable language packs above, then search to compare.</div>';
             countEl.textContent = '';
             return;
         }

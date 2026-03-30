@@ -143,6 +143,8 @@ class MergeEngine {
             }
         }
 
+        this._applyVersionOverride(merged);
+
         return {
             merged,
             stats: {
@@ -151,6 +153,103 @@ class MergeEngine {
                 categoriesOverridden: categoriesUsed.size
             }
         };
+    }
+
+    /**
+     * Priority-based merge: highest-priority pack's changes win, lower priorities fill gaps.
+     * @param {string[]} orderedSources - Source IDs in priority order (index 0 = highest)
+     * @returns {{merged: Map<string, string>, stats: {totalKeys: number, overriddenKeys: number, perSource: Array<{sourceId: string, applied: number, overlapped: number}>}}}
+     */
+    mergePriority(orderedSources) {
+        if (!this.stock) throw new Error('Stock not loaded');
+
+        const merged = new Map();
+        let overriddenKeys = 0;
+        const perSource = orderedSources.map(id => ({ sourceId: id, applied: 0, overlapped: 0 }));
+
+        for (const [key, stockValue] of this.stock) {
+            let finalValue = stockValue;
+            let claimed = false;
+
+            for (let i = 0; i < orderedSources.length; i++) {
+                const sourceId = orderedSources[i];
+                const importData = this.imports.get(sourceId);
+                if (!importData) continue;
+
+                const importValue = importData.get(key);
+                if (importValue !== undefined && importValue !== stockValue) {
+                    if (!claimed) {
+                        finalValue = importValue;
+                        perSource[i].applied++;
+                        claimed = true;
+                    } else {
+                        perSource[i].overlapped++;
+                    }
+                }
+            }
+
+            if (claimed) overriddenKeys++;
+            merged.set(key, finalValue);
+        }
+
+        this._applyVersionOverride(merged);
+
+        return {
+            merged,
+            stats: {
+                totalKeys: merged.size,
+                overriddenKeys,
+                perSource
+            }
+        };
+    }
+
+    /**
+     * Compute priority merge stats without building the full merged map.
+     * @param {string[]} orderedSources - Source IDs in priority order (index 0 = highest)
+     * @returns {{overriddenKeys: number, perSource: Array<{sourceId: string, applied: number, overlapped: number}>}}
+     */
+    computePriorityStats(orderedSources) {
+        if (!this.stock) throw new Error('Stock not loaded');
+
+        const perSource = orderedSources.map(id => ({ sourceId: id, applied: 0, overlapped: 0 }));
+        let overriddenKeys = 0;
+
+        for (const [key, stockValue] of this.stock) {
+            let claimed = false;
+
+            for (let i = 0; i < orderedSources.length; i++) {
+                const sourceId = orderedSources[i];
+                const importData = this.imports.get(sourceId);
+                if (!importData) continue;
+
+                const importValue = importData.get(key);
+                if (importValue !== undefined && importValue !== stockValue) {
+                    if (!claimed) {
+                        perSource[i].applied++;
+                        claimed = true;
+                    } else {
+                        perSource[i].overlapped++;
+                    }
+                }
+            }
+
+            if (claimed) overriddenKeys++;
+        }
+
+        return { overriddenKeys, perSource };
+    }
+
+    /**
+     * Override Frontend_PU_Version with StarMeld branding.
+     * @param {Map<string, string>} merged - The merged output map
+     */
+    _applyVersionOverride(merged) {
+        const key = 'Frontend_PU_Version';
+        const stockValue = this.stock.get(key);
+        if (stockValue) {
+            merged.set(key, `${stockValue} - Custom Remix built by StarMeld`);
+        }
     }
 }
 

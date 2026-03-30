@@ -31,68 +31,69 @@
             </p>
         </section>
 
+        <!-- Section 1: Stock Base (shared across merge modes) -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Stock Base</h2>
+                <span class="status status-empty" id="stock-status">Not loaded</span>
+            </div>
+            <div class="section-body">
+                <div class="stock-options">
+                    <div class="stock-option active" id="stock-option-github">
+                        <input type="radio" name="stock-source" id="stock-github" value="github" checked>
+                        <label for="stock-github">
+                            <div class="source-name">Use stock from GitHub</div>
+                            <div class="source-detail">BeltaKoda/ScCompLangPackRemix &mdash; LIVE/stock-global.ini</div>
+                        </label>
+                    </div>
+                    <div class="stock-option" id="stock-option-custom">
+                        <input type="radio" name="stock-source" id="stock-custom" value="custom">
+                        <label for="stock-custom">
+                            <div class="source-name">Upload custom stock file</div>
+                            <div class="source-detail">Use your own extracted global.ini as the base</div>
+                        </label>
+                    </div>
+                </div>
+                <div id="stock-upload-area" style="display: none; margin-top: 12px;">
+                    <button class="btn" id="stock-upload-btn">Choose Stock File</button>
+                    <input type="file" id="stock-file-input" accept=".ini,.txt">
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Language Packs (shared across merge modes) -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Language Packs</h2>
+            </div>
+            <div class="section-body">
+                <p class="section-hint">Enable the packs you want, then choose a merge mode below.</p>
+                <div class="pack-list" id="github-packs">
+                    <!-- Populated by app.js -->
+                </div>
+
+                <div class="upload-area">
+                    <h3>Custom Uploads</h3>
+                    <button class="btn" id="custom-upload-btn">Import Custom Language Pack</button>
+                    <input type="file" id="custom-pack-input" accept=".ini,.txt" multiple>
+                    <div class="custom-packs" id="custom-packs">
+                        <!-- Populated by app.js -->
+                    </div>
+                    <button class="btn suggest-btn" id="suggest-pack-btn">Suggest a Language Pack</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Tab Navigation -->
         <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="merge">Merge Tool</button>
+            <button class="tab-btn active" data-tab="merge">Category Merge</button>
+            <button class="tab-btn" data-tab="priority">Priority Merge</button>
             <button class="tab-btn" data-tab="browser">Category Browser</button>
             <button class="tab-btn" data-tab="compare">Compare Items</button>
         </nav>
 
-        <!-- ==================== MERGE TAB ==================== -->
+        <!-- ==================== CATEGORY MERGE TAB ==================== -->
         <div id="tab-merge" class="tab-content active">
-
-            <!-- Section 1: Stock Base -->
-            <section class="section">
-                <div class="section-header">
-                    <h2>Stock Base</h2>
-                    <span class="status status-empty" id="stock-status">Not loaded</span>
-                </div>
-                <div class="section-body">
-                    <div class="stock-options">
-                        <div class="stock-option active" id="stock-option-github">
-                            <input type="radio" name="stock-source" id="stock-github" value="github" checked>
-                            <label for="stock-github">
-                                <div class="source-name">Use stock from GitHub</div>
-                                <div class="source-detail">BeltaKoda/ScCompLangPackRemix &mdash; LIVE/stock-global.ini</div>
-                            </label>
-                        </div>
-                        <div class="stock-option" id="stock-option-custom">
-                            <input type="radio" name="stock-source" id="stock-custom" value="custom">
-                            <label for="stock-custom">
-                                <div class="source-name">Upload custom stock file</div>
-                                <div class="source-detail">Use your own extracted global.ini as the base</div>
-                            </label>
-                        </div>
-                    </div>
-                    <div id="stock-upload-area" style="display: none; margin-top: 12px;">
-                        <button class="btn" id="stock-upload-btn">Choose Stock File</button>
-                        <input type="file" id="stock-file-input" accept=".ini,.txt">
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 2: Language Packs -->
-            <section class="section">
-                <div class="section-header">
-                    <h2>Language Packs</h2>
-                </div>
-                <div class="section-body">
-                    <p class="section-hint">Enable the language packs you want to make available for merging. You can select which categories to use from each pack in the Category Selection below.</p>
-                    <div class="pack-list" id="github-packs">
-                        <!-- Populated by app.js -->
-                    </div>
-
-                    <div class="upload-area">
-                        <h3>Custom Uploads</h3>
-                        <button class="btn" id="custom-upload-btn">Import Custom Language Pack</button>
-                        <input type="file" id="custom-pack-input" accept=".ini,.txt" multiple>
-                        <div class="custom-packs" id="custom-packs">
-                            <!-- Populated by app.js -->
-                        </div>
-                        <button class="btn suggest-btn" id="suggest-pack-btn">Suggest a Language Pack</button>
-                    </div>
-                </div>
-            </section>
 
             <!-- Section 3: Category Selection -->
             <section class="section">
@@ -122,19 +123,48 @@
                 </div>
             </section>
 
-            <!-- Installation Instructions -->
-            <section class="section install-section">
+        </div>
+
+        <!-- ==================== PRIORITY MERGE TAB ==================== -->
+        <div id="tab-priority" class="tab-content">
+
+            <!-- Priority Ordering -->
+            <section class="section">
                 <div class="section-header">
-                    <h2>Installation</h2>
+                    <h2>Priority Order</h2>
                 </div>
-                <div class="section-body install-instructions">
-                    <p>After downloading your merged <code>global.ini</code>, place it in your Star Citizen installation:</p>
-                    <div class="code-block">StarCitizen\LIVE\data\Localization\english\global.ini</div>
-                    <p>If you're using PTU, EPTU, or HOTFIX, replace <code>LIVE</code> with the appropriate channel folder:</p>
-                    <div class="code-block">StarCitizen\PTU\data\Localization\english\global.ini</div>
-                    <p>You also need a <code>user.cfg</code> file in the channel root folder (e.g., <code>StarCitizen\LIVE\user.cfg</code>). Create it if it doesn't exist, and make sure it contains:</p>
-                    <div class="code-block">g_language = english</div>
-                    <p class="install-note">The <code>data\Localization\english\</code> folder structure may not exist yet &mdash; create it manually if needed. The game will read your custom file on next launch.</p>
+                <div class="section-body">
+                    <p class="section-hint">Set the priority for each enabled language pack. Priority 1 wins all conflicts &mdash; its customizations are always applied. Lower priorities fill in the remaining gaps where higher-priority packs match stock. Use the arrow buttons to reorder.</p>
+                    <div class="priority-list" id="priority-list">
+                        <div class="category-empty">Enable at least one language pack above to set priorities.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real-time Stats -->
+            <section class="section">
+                <div class="section-header">
+                    <h2>Merge Preview</h2>
+                </div>
+                <div class="section-body">
+                    <div class="priority-stats" id="priority-stats">
+                        <div class="category-empty">Enable packs and set priority order to see merge statistics.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Merge & Download -->
+            <section class="section">
+                <div class="section-header">
+                    <h2>Merge &amp; Download</h2>
+                </div>
+                <div class="section-body">
+                    <div class="merge-actions">
+                        <button class="btn btn-primary btn-large" id="priority-merge-btn" disabled>Merge &amp; Download</button>
+                        <div class="merge-summary" id="priority-merge-summary">
+                            Set priority order to merge.
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -167,7 +197,7 @@
                     <h2>Compare Items</h2>
                 </div>
                 <div class="section-body">
-                    <p class="section-hint">Compare how different language packs modify the same keys. Enable packs on the Merge Tool tab first.</p>
+                    <p class="section-hint">Compare how different language packs modify the same keys. Enable language packs above first.</p>
                     <div class="compare-controls">
                         <input type="text" id="compare-search-input" placeholder="Search by key or value (e.g., Bracer, Panther, bounty)..." class="search-input">
                         <div class="compare-packs" id="compare-packs">
@@ -176,11 +206,27 @@
                     </div>
                     <span class="db-search-count" id="compare-search-count"></span>
                     <div class="compare-results" id="compare-results">
-                        <div class="category-empty">Enable language packs on the Merge Tool tab, then search to compare.</div>
+                        <div class="category-empty">Enable language packs above, then search to compare.</div>
                     </div>
                 </div>
             </section>
         </div>
+
+        <!-- Installation Instructions (shared across merge modes) -->
+        <section class="section install-section">
+            <div class="section-header">
+                <h2>Installation</h2>
+            </div>
+            <div class="section-body install-instructions">
+                <p>After downloading your merged <code>global.ini</code>, place it in your Star Citizen installation:</p>
+                <div class="code-block">StarCitizen\LIVE\data\Localization\english\global.ini</div>
+                <p>If you're using PTU, EPTU, or HOTFIX, replace <code>LIVE</code> with the appropriate channel folder:</p>
+                <div class="code-block">StarCitizen\PTU\data\Localization\english\global.ini</div>
+                <p>You also need a <code>user.cfg</code> file in the channel root folder (e.g., <code>StarCitizen\LIVE\user.cfg</code>). Create it if it doesn't exist, and make sure it contains:</p>
+                <div class="code-block">g_language = english</div>
+                <p class="install-note">The <code>data\Localization\english\</code> folder structure may not exist yet &mdash; create it manually if needed. The game will read your custom file on next launch.</p>
+            </div>
+        </section>
 
         <!-- Footer -->
         <footer class="footer">

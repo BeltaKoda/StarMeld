@@ -1048,6 +1048,126 @@ body {
     color: var(--accent-hover);
 }
 
+/* Priority Merge */
+.priority-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.priority-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-widget);
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.priority-item:hover {
+    border-color: var(--accent-dim);
+}
+
+.priority-number {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 30px;
+    text-align: center;
+}
+
+.priority-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.priority-desc {
+    flex: 2;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.priority-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.priority-arrows button {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    width: 28px;
+    height: 22px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.priority-arrows button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.priority-arrows button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.priority-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.priority-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+}
+
+.priority-stat-row .stat-priority {
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 20px;
+}
+
+.priority-stat-row .stat-name {
+    font-weight: 500;
+    min-width: 180px;
+}
+
+.priority-stat-row .stat-applied {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.priority-stat-row .stat-overlapped {
+    color: var(--text-disabled);
+    font-size: 12px;
+}
+
+.priority-stat-total {
+    padding: 10px 14px;
+    border-top: 2px solid var(--border);
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
 /* Responsive */
 @media (max-width: 700px) {
     .container {
@@ -1071,6 +1191,15 @@ body {
     .merge-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .priority-item {
+        flex-wrap: wrap;
+    }
+
+    .priority-desc {
+        min-width: 100%;
+        order: 99;
     }
 }
 
