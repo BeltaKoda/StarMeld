@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarMeld — Star Citizen Localization Merge Tool</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>StarMeld</h1>
+            <div class="subtitle">Star Citizen Localization Merge Tool</div>
+        </header>
+
+        <!-- Section 1: Stock Base -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Stock Base</h2>
+                <span class="status status-empty" id="stock-status">Not loaded</span>
+            </div>
+            <div class="section-body">
+                <div class="stock-options">
+                    <div class="stock-option active" id="stock-option-github">
+                        <input type="radio" name="stock-source" id="stock-github" value="github" checked>
+                        <label for="stock-github">
+                            <div class="source-name">Use stock from GitHub</div>
+                            <div class="source-detail">BeltaKoda/ScCompLangPackRemix &mdash; LIVE/stock-global.ini</div>
+                        </label>
+                    </div>
+                    <div class="stock-option" id="stock-option-custom">
+                        <input type="radio" name="stock-source" id="stock-custom" value="custom">
+                        <label for="stock-custom">
+                            <div class="source-name">Upload custom stock file</div>
+                            <div class="source-detail">Use your own extracted global.ini as the base</div>
+                        </label>
+                    </div>
+                </div>
+                <div id="stock-upload-area" style="display: none; margin-top: 12px;">
+                    <button class="btn" id="stock-upload-btn">Choose Stock File</button>
+                    <input type="file" id="stock-file-input" accept=".ini,.txt">
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Language Packs -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Language Packs</h2>
+            </div>
+            <div class="section-body">
+                <div class="pack-list" id="github-packs">
+                    <!-- Populated by app.js -->
+                </div>
+
+                <div class="upload-area">
+                    <h3>Custom Uploads</h3>
+                    <button class="btn" id="custom-upload-btn">Import Custom Language Pack</button>
+                    <input type="file" id="custom-pack-input" accept=".ini,.txt" multiple>
+                    <div class="custom-packs" id="custom-packs">
+                        <!-- Populated by app.js -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Category Selection -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Category Selection</h2>
+            </div>
+            <div class="section-body">
+                <div class="category-tree" id="category-tree">
+                    <div class="category-empty">Load a stock file and enable at least one language pack to see categories.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Merge & Download -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Merge &amp; Download</h2>
+            </div>
+            <div class="section-body">
+                <div class="merge-actions">
+                    <button class="btn btn-primary btn-large" id="merge-btn" disabled>Merge &amp; Download</button>
+                    <div class="merge-summary" id="merge-summary">
+                        Select categories from language packs to merge.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            StarMeld by <a href="https://github.com/BeltaKoda" target="_blank">BeltaKoda</a>
+            &mdash;
+            <a href="https://github.com/BeltaKoda/StarMeld" target="_blank">Source on GitHub</a>
+        </footer>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
