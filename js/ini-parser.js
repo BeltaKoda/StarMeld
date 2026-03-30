@@ -20,14 +20,14 @@ function parseIni(text) {
 
     const lines = text.split(/\r?\n/);
     for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith(';')) continue;
+        const lineTrimmedStart = line.trimStart();
+        if (!lineTrimmedStart || lineTrimmedStart.startsWith(';')) continue;
 
-        const eqIndex = trimmed.indexOf('=');
+        const eqIndex = line.indexOf('=');
         if (eqIndex === -1) continue;
 
-        const key = trimmed.substring(0, eqIndex);
-        const value = trimmed.substring(eqIndex + 1);
+        const key = line.substring(0, eqIndex).trim();
+        const value = line.substring(eqIndex + 1); // preserve leading/trailing whitespace in value
         entries.set(key, value);
     }
 
@@ -43,7 +43,8 @@ function parseIni(text) {
 function serializeIni(entries) {
     const sortedKeys = [...entries.keys()].sort();
     const lines = sortedKeys.map(key => `${key}=${entries.get(key)}`);
-    return BOM + lines.join('\n') + '\n';
+    // Use CRLF for Windows compatibility
+    return BOM + lines.join('\r\n') + '\r\n';
 }
 
 /**

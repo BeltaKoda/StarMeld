@@ -637,6 +637,20 @@ class StarMeldApp {
         summary.innerHTML = `Downloaded! <strong>${stats.overriddenKeys.toLocaleString()}</strong> keys overridden across <strong>${stats.categoriesOverridden}</strong> categories (${stats.totalKeys.toLocaleString()} total keys)`;
     }
 
+    // --- Security ---
+
+    /**
+     * Escape unsafe characters for HTML rendering.
+     */
+    escapeHtml(unsafe) {
+        return (unsafe || '').toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     // --- Category Browser ---
 
     async loadCategoryDb() {
@@ -724,10 +738,10 @@ class StarMeldApp {
                 : (match.value || '');
 
             tr.innerHTML = `
-                <td class="key-cell">${match.key}</td>
-                <td class="value-cell">${displayValue}</td>
-                <td class="cat-cell">${match.category}</td>
-                <td class="group-cell">${match.group}</td>
+                <td class="key-cell">${this.escapeHtml(match.key)}</td>
+                <td class="value-cell">${this.escapeHtml(displayValue)}</td>
+                <td class="cat-cell">${this.escapeHtml(match.category)}</td>
+                <td class="group-cell">${this.escapeHtml(match.group)}</td>
                 <td class="report-cell"><a href="${issueUrl}" target="_blank" class="report-link" title="Report incorrect category">Report Incorrect Category</a></td>
             `;
             tbody.appendChild(tr);
@@ -841,8 +855,8 @@ class StarMeldApp {
                 ? match.stockValue.substring(0, 60) + '...'
                 : match.stockValue;
 
-            let html = `<td class="key-cell">${match.key}</td>`;
-            html += `<td class="stock-cell">${stockDisplay}</td>`;
+            let html = `<td class="key-cell">${this.escapeHtml(match.key)}</td>`;
+            html += `<td class="stock-cell">${this.escapeHtml(stockDisplay)}</td>`;
 
             for (const packId of selectedPacks) {
                 const importData = this.mergeEngine.imports.get(packId);
@@ -854,7 +868,7 @@ class StarMeldApp {
                     const display = importValue.length > 60
                         ? importValue.substring(0, 60) + '...'
                         : importValue;
-                    html += `<td class="modified-cell">${display}</td>`;
+                    html += `<td class="modified-cell">${this.escapeHtml(display)}</td>`;
                 }
             }
 

@@ -90,26 +90,6 @@ class MergeEngine {
     }
 
     /**
-     * Get the list of source names that have modifications in a given category.
-     * @param {string} category - Category name
-     * @returns {string[]} Source names with modifications
-     */
-    getSourcesForCategory(category) {
-        const sources = [];
-        for (const [name, importData] of this.imports) {
-            for (const [key, stockValue] of this.stock) {
-                if (this.stockClassification.get(key) !== category) continue;
-                const importValue = importData.get(key);
-                if (importValue !== undefined && importValue !== stockValue) {
-                    sources.push(name);
-                    break;
-                }
-            }
-        }
-        return sources;
-    }
-
-    /**
      * Merge stock + selected category overrides into a final output.
      * @param {Map<string, string>} selections - Map of category name -> source name to use.
      *   Categories not in this map use stock values.
