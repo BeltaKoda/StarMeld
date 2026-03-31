@@ -43,7 +43,8 @@ function parseIni(text) {
 function serializeIni(entries) {
     const sortedKeys = [...entries.keys()].sort();
     const lines = sortedKeys.map(key => `${key}=${entries.get(key)}`);
-    return BOM + lines.join('\n') + '\n';
+    // Use CRLF for Windows compatibility
+    return BOM + lines.join('\r\n') + '\r\n';
 }
 
 /**
