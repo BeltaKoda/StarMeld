@@ -20,14 +20,14 @@ function parseIni(text) {
 
     const lines = text.split(/\r?\n/);
     for (const line of lines) {
-        const lineTrimmedStart = line.trimStart();
-        if (!lineTrimmedStart || lineTrimmedStart.startsWith(';')) continue;
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(';')) continue;
 
-        const eqIndex = line.indexOf('=');
+        const eqIndex = trimmed.indexOf('=');
         if (eqIndex === -1) continue;
 
-        const key = line.substring(0, eqIndex).trim();
-        const value = line.substring(eqIndex + 1); // preserve leading/trailing whitespace in value
+        const key = trimmed.substring(0, eqIndex);
+        const value = trimmed.substring(eqIndex + 1);
         entries.set(key, value);
     }
 
