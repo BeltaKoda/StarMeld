@@ -631,7 +631,7 @@ class StarMeldApp {
             } else {
                 const custom = this.customPacks.get(sourceId);
                 const name = custom ? custom.name : sourceId;
-                li.innerHTML = `<span class="source-label">${name}</span> (uploaded from your computer)`;
+                li.innerHTML = `<span class="source-label">${this.escapeHtml(name)}</span> (uploaded from your computer)`;
             }
 
             list.appendChild(li);
@@ -709,8 +709,8 @@ class StarMeldApp {
             item.className = 'priority-item';
             item.innerHTML = `
                 <span class="priority-number">${index + 1}</span>
-                <span class="priority-name">${name}</span>
-                <span class="priority-desc">${desc}</span>
+                <span class="priority-name">${this.escapeHtml(name)}</span>
+                <span class="priority-desc">${this.escapeHtml(desc)}</span>
                 <div class="priority-arrows"></div>
             `;
 
@@ -775,7 +775,7 @@ class StarMeldApp {
 
             row.innerHTML = `
                 <span class="stat-priority">${index + 1}</span>
-                <span class="stat-name">${name}</span>
+                <span class="stat-name">${this.escapeHtml(name)}</span>
                 <span class="stat-applied">${ps.applied.toLocaleString()} keys applied</span>
                 ${overlapText}
             `;
@@ -933,7 +933,7 @@ class StarMeldApp {
         for (const sourceId of this.enabledSources) {
             const name = this.getSourceDisplayName(sourceId);
             const label = document.createElement('label');
-            label.innerHTML = `<input type="checkbox" value="${sourceId}" checked> ${name}`;
+            label.innerHTML = `<input type="checkbox" value="${sourceId}" checked> ${this.escapeHtml(name)}`;
             label.querySelector('input').addEventListener('change', () => {
                 // Re-search with current query
                 const query = document.getElementById('compare-search-input').value;
