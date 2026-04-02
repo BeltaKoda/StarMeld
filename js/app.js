@@ -198,10 +198,10 @@ class StarMeldApp {
             const data = parseIni(text);
             this.mergeEngine.setStock(data);
             this.stockLoaded = true;
-            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys (${file.name})`);
+            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys (${this.escapeHtml(file.name)})`);
             this.refreshAll();
         } catch (err) {
-            this.setStockStatus('error', `Failed to read file: ${err.message}`);
+            this.setStockStatus('error', `Failed to read file: ${this.escapeHtml(err.message)}`);
             this.stockLoaded = false;
         }
     }
@@ -235,8 +235,8 @@ class StarMeldApp {
             card.innerHTML = `
                 <input type="checkbox" id="check-${source.id}" ${source.defaultEnabled ? 'checked' : ''}>
                 <div class="pack-info">
-                    <div class="pack-name">${source.name}</div>
-                    <div class="pack-desc">${source.description}</div>
+                    <div class="pack-name">${this.escapeHtml(source.name)}</div>
+                    <div class="pack-desc">${this.escapeHtml(source.description)}</div>
                     <div class="pack-links">
                         <a href="${repoUrl}" target="_blank">GitHub Repo</a>
                         <a href="${source.url}" target="_blank">View INI File</a>
@@ -314,7 +314,7 @@ class StarMeldApp {
             this.updatePriorityStats();
             this.updatePriorityMergeButton();
         } catch (err) {
-            statusEl.innerHTML = `<span class="status status-error">Error: ${err.message}</span>`;
+            statusEl.innerHTML = `<span class="status status-error">Error: ${this.escapeHtml(err.message)}</span>`;
             this.enabledSources.delete(source.id);
         }
     }
@@ -412,7 +412,7 @@ class StarMeldApp {
             card.className = 'custom-pack-card';
             card.innerHTML = `
                 <div class="pack-info">
-                    <div class="pack-name">${pack.name}</div>
+                    <div class="pack-name">${this.escapeHtml(pack.name)}</div>
                     <div class="pack-stats">${statsText}</div>
                 </div>
                 <button class="set-default-btn" data-id="${id}">Set as Default</button>
@@ -529,7 +529,7 @@ class StarMeldApp {
 
                 for (const [srcId, count] of groupSourcesMap) {
                     const displayName = this.getSourceDisplayName(srcId);
-                    groupSelect.innerHTML += `<option value="${srcId}">${displayName} (${count})</option>`;
+                    groupSelect.innerHTML += `<option value="${srcId}">${this.escapeHtml(displayName)} (${count})</option>`;
                 }
 
                 // Detect if all modifiable categories share the same selection
@@ -602,7 +602,7 @@ class StarMeldApp {
                     select.innerHTML = '<option value="">Stock (default)</option>';
                     for (const s of sourcesWithMods) {
                         const displayName = this.getSourceDisplayName(s.id);
-                        select.innerHTML += `<option value="${s.id}">${displayName} (${s.count})</option>`;
+                        select.innerHTML += `<option value="${s.id}">${this.escapeHtml(displayName)} (${s.count})</option>`;
                     }
 
                     const prevSelection = this.categorySelections.get(cat.name);

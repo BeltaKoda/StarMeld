@@ -32,10 +32,11 @@ def read_ini(path: Path) -> dict[str, str]:
     entries = {}
     with open(path, "r", encoding="utf-8-sig", errors="replace") as f:
         for line in f:
-            line = line.strip()
-            if "=" in line and not line.startswith(";"):
+            line = line.rstrip("\n\r")
+            trimmed_start = line.lstrip()
+            if "=" in line and not trimmed_start.startswith(";"):
                 key, value = line.split("=", 1)
-                entries[key] = value
+                entries[key.strip()] = value
     return entries
 
 
