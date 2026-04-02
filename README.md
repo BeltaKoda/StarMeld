@@ -19,6 +19,7 @@ Star Citizen loads exactly one `global.ini` file. Missing keys display as raw `@
 ## Usage
 
 1. Visit the [StarMeld web app](https://beltakoda.github.io/StarMeld/)
+   > **Preview:** To test the upcoming Key Customiser feature, try the [preview version](https://beltakoda.github.io/StarMeld/preview/).
 2. Stock base loads automatically from GitHub
 3. Enable the language packs you want (check the boxes)
 4. In the Category Selection section, pick which source to use for each category
