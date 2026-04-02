@@ -1389,13 +1389,12 @@ class StarMeldApp {
         for (const [key, value] of this.userCustomisations) {
             const stockValue = stockData ? (stockData.get(key) || '') : '';
             const stockDisplay = stockValue.length > 50 ? stockValue.substring(0, 50) + '...' : stockValue;
-            const valueDisplay = value.length > 50 ? value.substring(0, 50) + '...' : value;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="key-cell">${this.escapeHtml(key)}</td>
                 <td class="stock-cell">${this.escapeHtml(stockDisplay)}</td>
-                <td class="modified-cell">${this.escapeHtml(valueDisplay)}</td>
+                <td class="customiser-input-cell"><input type="text" class="customiser-value-input customiser-my-input" data-key="${this.escapeHtml(key)}" value="${this.escapeHtml(value)}"></td>
                 <td class="customiser-action-cell"><button class="btn customiser-remove-btn" data-key="${this.escapeHtml(key)}">Remove</button></td>
             `;
             tbody.appendChild(tr);
@@ -1404,6 +1403,22 @@ class StarMeldApp {
         table.appendChild(tbody);
         container.innerHTML = '';
         container.appendChild(table);
+
+        container.querySelectorAll('.customiser-my-input').forEach(input => {
+            const commitEdit = () => {
+                const key = input.dataset.key;
+                const newValue = input.value.trim();
+                if (!newValue) {
+                    this.removeCustomisation(key);
+                } else if (newValue !== this.userCustomisations.get(key)) {
+                    this.saveCustomisation(key, newValue);
+                }
+            };
+            input.addEventListener('blur', commitEdit);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { input.blur(); }
+            });
+        });
 
         container.querySelectorAll('.customiser-remove-btn').forEach(btn => {
             btn.addEventListener('click', () => {
