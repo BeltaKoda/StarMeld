@@ -23,6 +23,7 @@ class StarMeldApp {
         this.userCustomisations = new Map();
         this.userCustomisationsId = 'user-customisations';
         this.customiserGroupFilter = null;
+        this.customiserCategoryFilter = null;
     }
 
     async init() {
@@ -1090,20 +1091,28 @@ class StarMeldApp {
 
     renderCustomiserFilters() {
         const container = document.getElementById('customiser-filters');
+        const subContainer = document.getElementById('customiser-sub-filters');
         container.innerHTML = '';
+        subContainer.innerHTML = '';
 
         const hierarchy = this.categoryDB.getHierarchy();
         if (!hierarchy || hierarchy.length === 0) return;
+
+        const rerunSearch = () => {
+            const query = document.getElementById('customiser-search-input').value;
+            if (query.trim().length >= 3) this.searchCustomiser(query);
+        };
 
         const allChip = document.createElement('button');
         allChip.className = 'filter-chip active';
         allChip.textContent = 'All';
         allChip.addEventListener('click', () => {
             this.customiserGroupFilter = null;
+            this.customiserCategoryFilter = null;
             container.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
             allChip.classList.add('active');
-            const query = document.getElementById('customiser-search-input').value;
-            if (query.trim().length >= 3) this.searchCustomiser(query);
+            subContainer.innerHTML = '';
+            rerunSearch();
         });
         container.appendChild(allChip);
 
@@ -1113,12 +1122,50 @@ class StarMeldApp {
             chip.textContent = group.name;
             chip.addEventListener('click', () => {
                 this.customiserGroupFilter = group.name;
+                this.customiserCategoryFilter = null;
                 container.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
-                const query = document.getElementById('customiser-search-input').value;
-                if (query.trim().length >= 3) this.searchCustomiser(query);
+                this.renderCustomiserSubFilters(group);
+                rerunSearch();
             });
             container.appendChild(chip);
+        }
+    }
+
+    renderCustomiserSubFilters(group) {
+        const subContainer = document.getElementById('customiser-sub-filters');
+        subContainer.innerHTML = '';
+
+        if (!group || !group.categories || group.categories.length <= 1) return;
+
+        const rerunSearch = () => {
+            const query = document.getElementById('customiser-search-input').value;
+            if (query.trim().length >= 3) this.searchCustomiser(query);
+        };
+
+        const allChip = document.createElement('button');
+        allChip.className = 'filter-chip filter-chip-sub active';
+        allChip.textContent = 'All ' + group.name;
+        allChip.addEventListener('click', () => {
+            this.customiserCategoryFilter = null;
+            subContainer.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            allChip.classList.add('active');
+            rerunSearch();
+        });
+        subContainer.appendChild(allChip);
+
+        for (const cat of group.categories) {
+            const chip = document.createElement('button');
+            chip.className = 'filter-chip filter-chip-sub';
+            chip.textContent = cat.name;
+            chip.title = cat.description;
+            chip.addEventListener('click', () => {
+                this.customiserCategoryFilter = cat.name;
+                subContainer.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                rerunSearch();
+            });
+            subContainer.appendChild(chip);
         }
     }
 
@@ -1144,20 +1191,23 @@ class StarMeldApp {
         const matches = [];
         const MAX_RESULTS = 100;
         const groupFilter = this.customiserGroupFilter;
+        const categoryFilter = this.customiserCategoryFilter;
         const catKeys = this.categoryDbData ? this.categoryDbData.keys : null;
 
         for (const [key, stockValue] of stockData) {
             if (key.toLowerCase().includes(lowerQuery) || stockValue.toLowerCase().includes(lowerQuery)) {
-                if (groupFilter && catKeys) {
+                if (catKeys && (categoryFilter || groupFilter)) {
                     const info = catKeys[key];
-                    if (!info || info.group !== groupFilter) continue;
+                    if (!info) continue;
+                    if (categoryFilter && info.category !== categoryFilter) continue;
+                    if (!categoryFilter && groupFilter && info.group !== groupFilter) continue;
                 }
                 matches.push({ key, stockValue });
                 if (matches.length >= MAX_RESULTS) break;
             }
         }
 
-        const filterLabel = groupFilter ? ` in ${groupFilter}` : '';
+        const filterLabel = categoryFilter ? ` in ${categoryFilter}` : (groupFilter ? ` in ${groupFilter}` : '');
         countEl.textContent = matches.length >= MAX_RESULTS
             ? `${MAX_RESULTS}+ matches${filterLabel} (showing first ${MAX_RESULTS})`
             : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}${filterLabel}`;
@@ -1270,7 +1320,7 @@ class StarMeldApp {
 
         if (this.userCustomisations.size > 0) {
             this.mergeEngine.addImport(id, this.userCustomisations);
-            this.customPacks.set(id, { name: 'My Customisations', data: this.userCustomisations });
+            this.customPacks.set(id, { name: 'My Customizations', data: this.userCustomisations });
             if (!this.enabledSources.has(id)) {
                 this.enabledSources.add(id);
             }
@@ -1308,12 +1358,12 @@ class StarMeldApp {
         const clearBtn = document.getElementById('customiser-clear-btn');
 
         const count = this.userCustomisations.size;
-        countEl.textContent = `${count} customisation${count !== 1 ? 's' : ''}`;
+        countEl.textContent = `${count} customization${count !== 1 ? 's' : ''}`;
         exportBtn.disabled = count === 0;
         clearBtn.disabled = count === 0;
 
         if (count === 0) {
-            container.innerHTML = '<div class="category-empty">No customisations yet. Search above and edit key values to get started.</div>';
+            container.innerHTML = '<div class="category-empty">No customizations yet. Search above and edit key values to get started.</div>';
             return;
         }
 
@@ -1373,7 +1423,7 @@ class StarMeldApp {
     exportCustomisations() {
         if (this.userCustomisations.size === 0) return;
         const content = serializeIni(this.userCustomisations);
-        downloadIni(content, 'my-customisations.ini');
+        downloadIni(content, 'my-customizations.ini');
     }
 
     async importCustomisations(file) {

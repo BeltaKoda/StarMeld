@@ -90,7 +90,7 @@
             <button class="tab-btn" data-tab="priority">Priority Merge</button>
             <button class="tab-btn" data-tab="browser">Category Browser</button>
             <button class="tab-btn" data-tab="compare">Compare Items</button>
-            <button class="tab-btn" data-tab="customiser">Key Customiser <span class="tab-badge" id="customiser-badge" style="display:none;">0</span></button>
+            <button class="tab-btn" data-tab="customiser">Customizer <span class="tab-badge" id="customiser-badge" style="display:none;">0</span></button>
         </nav>
 
         <!-- ==================== CATEGORY MERGE TAB ==================== -->
@@ -213,19 +213,20 @@
             </section>
         </div>
 
-        <!-- ==================== KEY CUSTOMISER TAB ==================== -->
+        <!-- ==================== CUSTOMIZER TAB ==================== -->
         <div id="tab-customiser" class="tab-content">
             <section class="section">
                 <div class="section-header">
-                    <h2>Key Customiser</h2>
+                    <h2>Customizer</h2>
                 </div>
                 <div class="section-body">
-                    <p class="section-hint">Search for any key, see its value across all enabled packs, and set your own custom value. Your customisations become a source called &ldquo;My Customisations&rdquo; that you can use in both the Category Merge and Priority Merge tabs.</p>
+                    <p class="section-hint">Search for any key, see its value across all enabled packs, and set your own custom value. Your customizations become a source called &ldquo;My Customizations&rdquo; that you can use in both the Category Merge and Priority Merge tabs.</p>
                     <div class="db-search">
                         <input type="text" id="customiser-search-input" placeholder="Search by key or value (e.g., Prospector, vehicle_Name, Panther)..." class="search-input">
                         <span class="db-search-count" id="customiser-search-count"></span>
                     </div>
                     <div class="customiser-filters" id="customiser-filters"></div>
+                    <div class="customiser-sub-filters" id="customiser-sub-filters"></div>
                     <div class="customiser-results" id="customiser-results">
                         <div class="category-empty">Type at least 3 characters to search.</div>
                     </div>
@@ -234,12 +235,12 @@
 
             <section class="section">
                 <div class="section-header">
-                    <h2>My Customisations</h2>
-                    <span class="customiser-count" id="customiser-count">0 customisations</span>
+                    <h2>My Customizations</h2>
+                    <span class="customiser-count" id="customiser-count">0 customizations</span>
                 </div>
                 <div class="section-body">
                     <div class="customiser-options">
-                        <label class="customiser-checkbox"><input type="checkbox" id="customiser-persist"> Remember my customisations (saves to browser storage)</label>
+                        <label class="customiser-checkbox"><input type="checkbox" id="customiser-persist"> Remember my customizations (saves to browser storage)</label>
                     </div>
                     <div class="customiser-actions">
                         <button class="btn" id="customiser-export-btn" disabled>Export as INI</button>
@@ -248,7 +249,7 @@
                         <button class="btn customiser-clear-btn" id="customiser-clear-btn" disabled>Clear All</button>
                     </div>
                     <div class="customiser-list" id="customiser-list">
-                        <div class="category-empty">No customisations yet. Search above and edit key values to get started.</div>
+                        <div class="category-empty">No customizations yet. Search above and edit key values to get started.</div>
                     </div>
                 </div>
             </section>

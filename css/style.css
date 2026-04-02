@@ -1053,6 +1053,23 @@ body {
     background: var(--accent-glow);
 }
 
+.customiser-sub-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding-left: 12px;
+}
+
+.customiser-sub-filters:empty {
+    display: none;
+}
+
+.filter-chip-sub {
+    font-size: 11px;
+    padding: 3px 12px;
+}
+
 /* Key Customiser tab */
 .customiser-results {
     max-height: 600px;
