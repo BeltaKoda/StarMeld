@@ -670,7 +670,10 @@ class StarMeldApp {
             } else {
                 const custom = this.customPacks.get(sourceId);
                 const name = custom ? custom.name : sourceId;
-                li.innerHTML = `<span class="source-label">${this.escapeHtml(name)}</span> (uploaded from your computer)`;
+                const origin = sourceId === this.userCustomisationsId
+                    ? '(from the Customizer tab)'
+                    : '(uploaded from your computer)';
+                li.innerHTML = `<span class="source-label">${this.escapeHtml(name)}</span> ${origin}`;
             }
 
             list.appendChild(li);
