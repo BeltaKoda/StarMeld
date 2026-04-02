@@ -22,6 +22,7 @@ class StarMeldApp {
         this.categoryDbData = null;
         this.userCustomisations = new Map();
         this.userCustomisationsId = 'user-customisations';
+        this.customiserGroupFilter = null;
     }
 
     async init() {
@@ -31,6 +32,7 @@ class StarMeldApp {
         this.renderPackList();
         this.loadStockFromGitHub();
         this.loadCategoryDb();
+        this.renderCustomiserFilters();
         this.restoreCustomisations();
     }
 
@@ -1086,6 +1088,40 @@ class StarMeldApp {
 
     // --- Key Customiser ---
 
+    renderCustomiserFilters() {
+        const container = document.getElementById('customiser-filters');
+        container.innerHTML = '';
+
+        const hierarchy = this.categoryDB.getHierarchy();
+        if (!hierarchy || hierarchy.length === 0) return;
+
+        const allChip = document.createElement('button');
+        allChip.className = 'filter-chip active';
+        allChip.textContent = 'All';
+        allChip.addEventListener('click', () => {
+            this.customiserGroupFilter = null;
+            container.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            allChip.classList.add('active');
+            const query = document.getElementById('customiser-search-input').value;
+            if (query.trim().length >= 3) this.searchCustomiser(query);
+        });
+        container.appendChild(allChip);
+
+        for (const group of hierarchy) {
+            const chip = document.createElement('button');
+            chip.className = 'filter-chip';
+            chip.textContent = group.name;
+            chip.addEventListener('click', () => {
+                this.customiserGroupFilter = group.name;
+                container.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const query = document.getElementById('customiser-search-input').value;
+                if (query.trim().length >= 3) this.searchCustomiser(query);
+            });
+            container.appendChild(chip);
+        }
+    }
+
     searchCustomiser(query) {
         const container = document.getElementById('customiser-results');
         const countEl = document.getElementById('customiser-search-count');
@@ -1107,20 +1143,27 @@ class StarMeldApp {
         const stockData = this.mergeEngine.stock;
         const matches = [];
         const MAX_RESULTS = 100;
+        const groupFilter = this.customiserGroupFilter;
+        const catKeys = this.categoryDbData ? this.categoryDbData.keys : null;
 
         for (const [key, stockValue] of stockData) {
             if (key.toLowerCase().includes(lowerQuery) || stockValue.toLowerCase().includes(lowerQuery)) {
+                if (groupFilter && catKeys) {
+                    const info = catKeys[key];
+                    if (!info || info.group !== groupFilter) continue;
+                }
                 matches.push({ key, stockValue });
                 if (matches.length >= MAX_RESULTS) break;
             }
         }
 
+        const filterLabel = groupFilter ? ` in ${groupFilter}` : '';
         countEl.textContent = matches.length >= MAX_RESULTS
-            ? `${MAX_RESULTS}+ matches (showing first ${MAX_RESULTS})`
-            : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
+            ? `${MAX_RESULTS}+ matches${filterLabel} (showing first ${MAX_RESULTS})`
+            : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}${filterLabel}`;
 
         if (matches.length === 0) {
-            container.innerHTML = '<div class="category-empty">No keys found matching your search.</div>';
+            container.innerHTML = `<div class="category-empty">No keys found matching your search${this.escapeHtml(filterLabel)}.</div>`;
             return;
         }
 

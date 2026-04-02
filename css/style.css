@@ -1021,6 +1021,38 @@ body {
     background: var(--accent-dim);
 }
 
+/* Key Customiser — Filter chips */
+.customiser-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.filter-chip {
+    padding: 5px 14px;
+    background: var(--bg-widget);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+}
+
+.filter-chip:hover {
+    border-color: var(--accent-dim);
+    color: var(--text-primary);
+}
+
+.filter-chip.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+}
+
 /* Key Customiser tab */
 .customiser-results {
     max-height: 600px;
