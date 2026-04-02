@@ -20,6 +20,8 @@ class StarMeldApp {
         this.priorityOrder = [];
         this.mergeMode = 'category';
         this.categoryDbData = null;
+        this.userCustomisations = new Map();
+        this.userCustomisationsId = 'user-customisations';
     }
 
     async init() {
@@ -29,6 +31,7 @@ class StarMeldApp {
         this.renderPackList();
         this.loadStockFromGitHub();
         this.loadCategoryDb();
+        this.restoreCustomisations();
     }
 
     bindEvents() {
@@ -113,6 +116,9 @@ class StarMeldApp {
                     this.renderPriorityList();
                     this.updatePriorityStats();
                 }
+                if (btn.dataset.tab === 'customiser') {
+                    this.renderMyCustomisations();
+                }
             });
         });
 
@@ -131,6 +137,36 @@ class StarMeldApp {
             clearTimeout(compareSearchTimeout);
             compareSearchTimeout = setTimeout(() => this.searchCompare(compareSearchInput.value), 200);
         });
+
+        // Customiser tab search
+        const customiserSearchInput = document.getElementById('customiser-search-input');
+        let customiserSearchTimeout;
+        customiserSearchInput.addEventListener('input', () => {
+            clearTimeout(customiserSearchTimeout);
+            customiserSearchTimeout = setTimeout(() => this.searchCustomiser(customiserSearchInput.value), 200);
+        });
+
+        // Customiser persistence checkbox
+        document.getElementById('customiser-persist').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                this.saveCustomisationsToStorage();
+            } else {
+                localStorage.removeItem('starmeld-user-customisations');
+                localStorage.removeItem('starmeld-customiser-persist');
+            }
+            localStorage.setItem('starmeld-customiser-persist', e.target.checked ? 'true' : '');
+        });
+
+        // Customiser export/import/clear
+        document.getElementById('customiser-export-btn').addEventListener('click', () => this.exportCustomisations());
+        document.getElementById('customiser-import-btn').addEventListener('click', () => {
+            document.getElementById('customiser-import-input').click();
+        });
+        document.getElementById('customiser-import-input').addEventListener('change', (e) => {
+            if (e.target.files.length) this.importCustomisations(e.target.files[0]);
+            e.target.value = '';
+        });
+        document.getElementById('customiser-clear-btn').addEventListener('click', () => this.clearCustomisations());
     }
 
     // --- Stock Loading ---
@@ -1046,6 +1082,290 @@ class StarMeldApp {
         table.appendChild(tbody);
         container.innerHTML = '';
         container.appendChild(table);
+    }
+
+    // --- Key Customiser ---
+
+    searchCustomiser(query) {
+        const container = document.getElementById('customiser-results');
+        const countEl = document.getElementById('customiser-search-count');
+        const trimmed = query.trim();
+
+        if (!this.stockLoaded) {
+            container.innerHTML = '<div class="category-empty">Stock file not loaded yet.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        if (trimmed.length < 3) {
+            container.innerHTML = '<div class="category-empty">Type at least 3 characters to search.</div>';
+            countEl.textContent = '';
+            return;
+        }
+
+        const lowerQuery = trimmed.toLowerCase();
+        const stockData = this.mergeEngine.stock;
+        const matches = [];
+        const MAX_RESULTS = 100;
+
+        for (const [key, stockValue] of stockData) {
+            if (key.toLowerCase().includes(lowerQuery) || stockValue.toLowerCase().includes(lowerQuery)) {
+                matches.push({ key, stockValue });
+                if (matches.length >= MAX_RESULTS) break;
+            }
+        }
+
+        countEl.textContent = matches.length >= MAX_RESULTS
+            ? `${MAX_RESULTS}+ matches (showing first ${MAX_RESULTS})`
+            : `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`;
+
+        if (matches.length === 0) {
+            container.innerHTML = '<div class="category-empty">No keys found matching your search.</div>';
+            return;
+        }
+
+        // Build dynamic columns: Key | Stock | [enabled packs...] | Your Value | Action
+        const enabledPacks = [...this.enabledSources].filter(id => id !== this.userCustomisationsId);
+
+        const table = document.createElement('table');
+        table.className = 'compare-table customiser-table';
+
+        let headerHtml = '<tr><th>Key</th><th>Stock</th>';
+        for (const packId of enabledPacks) {
+            headerHtml += `<th>${this.escapeHtml(this.getSourceDisplayName(packId))}</th>`;
+        }
+        headerHtml += '<th>Your Value</th><th></th></tr>';
+        table.innerHTML = `<thead>${headerHtml}</thead>`;
+
+        const tbody = document.createElement('tbody');
+        for (const match of matches) {
+            const tr = document.createElement('tr');
+
+            const stockDisplay = match.stockValue.length > 60
+                ? match.stockValue.substring(0, 60) + '...'
+                : match.stockValue;
+
+            let html = `<td class="key-cell">${this.escapeHtml(match.key)}</td>`;
+            html += `<td class="stock-cell">${this.escapeHtml(stockDisplay)}</td>`;
+
+            for (const packId of enabledPacks) {
+                const importData = this.mergeEngine.imports.get(packId);
+                const importValue = importData ? importData.get(match.key) : undefined;
+
+                if (importValue === undefined || importValue === match.stockValue) {
+                    html += '<td class="same-cell">(same)</td>';
+                } else {
+                    const display = importValue.length > 60
+                        ? importValue.substring(0, 60) + '...'
+                        : importValue;
+                    html += `<td class="modified-cell">${this.escapeHtml(display)}</td>`;
+                }
+            }
+
+            const existingValue = this.userCustomisations.get(match.key) || '';
+            html += `<td class="customiser-input-cell"><input type="text" class="customiser-value-input" data-key="${this.escapeHtml(match.key)}" value="${this.escapeHtml(existingValue)}" placeholder="${this.escapeHtml(match.stockValue.substring(0, 40))}"></td>`;
+            html += `<td class="customiser-action-cell"><button class="btn customiser-save-btn" data-key="${this.escapeHtml(match.key)}">Save</button></td>`;
+
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+
+        // Bind save buttons and enter key
+        container.querySelectorAll('.customiser-save-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.key;
+                const input = container.querySelector(`.customiser-value-input[data-key="${CSS.escape(key)}"]`);
+                if (input && input.value.trim()) {
+                    this.saveCustomisation(key, input.value.trim());
+                    btn.textContent = 'Saved';
+                    btn.classList.add('btn-primary');
+                    setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('btn-primary'); }, 1000);
+                }
+            });
+        });
+
+        container.querySelectorAll('.customiser-value-input').forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const key = input.dataset.key;
+                    if (input.value.trim()) {
+                        this.saveCustomisation(key, input.value.trim());
+                        const btn = container.querySelector(`.customiser-save-btn[data-key="${CSS.escape(key)}"]`);
+                        if (btn) { btn.textContent = 'Saved'; btn.classList.add('btn-primary'); setTimeout(() => { btn.textContent = 'Save'; btn.classList.remove('btn-primary'); }, 1000); }
+                    }
+                }
+            });
+        });
+    }
+
+    saveCustomisation(key, value) {
+        const stockValue = this.mergeEngine.stock ? this.mergeEngine.stock.get(key) : null;
+        if (value === stockValue) {
+            this.userCustomisations.delete(key);
+        } else {
+            this.userCustomisations.set(key, value);
+        }
+        this.syncUserCustomisations();
+    }
+
+    removeCustomisation(key) {
+        this.userCustomisations.delete(key);
+        this.syncUserCustomisations();
+    }
+
+    clearCustomisations() {
+        this.userCustomisations.clear();
+        this.syncUserCustomisations();
+    }
+
+    syncUserCustomisations() {
+        const id = this.userCustomisationsId;
+
+        if (this.userCustomisations.size > 0) {
+            this.mergeEngine.addImport(id, this.userCustomisations);
+            this.customPacks.set(id, { name: 'My Customisations', data: this.userCustomisations });
+            if (!this.enabledSources.has(id)) {
+                this.enabledSources.add(id);
+            }
+            if (!this.priorityOrder.includes(id)) {
+                this.priorityOrder.push(id);
+            }
+        } else {
+            this.mergeEngine.removeImport(id);
+            this.customPacks.delete(id);
+            this.enabledSources.delete(id);
+            this.priorityOrder = this.priorityOrder.filter(pid => pid !== id);
+            for (const [cat, src] of this.categorySelections) {
+                if (src === id) this.categorySelections.delete(cat);
+            }
+        }
+
+        this.renderCustomPacks();
+        this.renderCategoryTree();
+        this.updateMergeButton();
+        this.renderPriorityList();
+        this.updatePriorityStats();
+        this.updatePriorityMergeButton();
+        this.renderMyCustomisations();
+        this.updateCustomiserBadge();
+
+        if (document.getElementById('customiser-persist').checked) {
+            this.saveCustomisationsToStorage();
+        }
+    }
+
+    renderMyCustomisations() {
+        const container = document.getElementById('customiser-list');
+        const countEl = document.getElementById('customiser-count');
+        const exportBtn = document.getElementById('customiser-export-btn');
+        const clearBtn = document.getElementById('customiser-clear-btn');
+
+        const count = this.userCustomisations.size;
+        countEl.textContent = `${count} customisation${count !== 1 ? 's' : ''}`;
+        exportBtn.disabled = count === 0;
+        clearBtn.disabled = count === 0;
+
+        if (count === 0) {
+            container.innerHTML = '<div class="category-empty">No customisations yet. Search above and edit key values to get started.</div>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'db-table customiser-my-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Stock Value</th>
+                    <th>Your Value</th>
+                    <th></th>
+                </tr>
+            </thead>
+        `;
+
+        const tbody = document.createElement('tbody');
+        const stockData = this.mergeEngine.stock;
+
+        for (const [key, value] of this.userCustomisations) {
+            const stockValue = stockData ? (stockData.get(key) || '') : '';
+            const stockDisplay = stockValue.length > 50 ? stockValue.substring(0, 50) + '...' : stockValue;
+            const valueDisplay = value.length > 50 ? value.substring(0, 50) + '...' : value;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="key-cell">${this.escapeHtml(key)}</td>
+                <td class="stock-cell">${this.escapeHtml(stockDisplay)}</td>
+                <td class="modified-cell">${this.escapeHtml(valueDisplay)}</td>
+                <td class="customiser-action-cell"><button class="btn customiser-remove-btn" data-key="${this.escapeHtml(key)}">Remove</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+        container.innerHTML = '';
+        container.appendChild(table);
+
+        container.querySelectorAll('.customiser-remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.removeCustomisation(btn.dataset.key);
+            });
+        });
+    }
+
+    updateCustomiserBadge() {
+        const badge = document.getElementById('customiser-badge');
+        const count = this.userCustomisations.size;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    exportCustomisations() {
+        if (this.userCustomisations.size === 0) return;
+        const content = serializeIni(this.userCustomisations);
+        downloadIni(content, 'my-customisations.ini');
+    }
+
+    async importCustomisations(file) {
+        try {
+            const text = await readFileAsText(file);
+            const data = parseIni(text);
+            for (const [key, value] of data) {
+                this.userCustomisations.set(key, value);
+            }
+            this.syncUserCustomisations();
+        } catch (err) {
+            console.error('Failed to import customisations:', err);
+        }
+    }
+
+    saveCustomisationsToStorage() {
+        const entries = Array.from(this.userCustomisations.entries());
+        localStorage.setItem('starmeld-user-customisations', JSON.stringify(entries));
+    }
+
+    restoreCustomisations() {
+        const persist = localStorage.getItem('starmeld-customiser-persist');
+        if (persist === 'true') {
+            document.getElementById('customiser-persist').checked = true;
+            const saved = localStorage.getItem('starmeld-user-customisations');
+            if (saved) {
+                try {
+                    const entries = JSON.parse(saved);
+                    this.userCustomisations = new Map(entries);
+                    this.syncUserCustomisations();
+                } catch {
+                    // Corrupt data, ignore
+                }
+            }
+        }
     }
 
     // --- Refresh ---
