@@ -405,10 +405,10 @@ class StarMeldApp {
     setAllToSource(sourceId) {
         if (!this.stockLoaded) return;
         const allDiffs = this.mergeEngine.getAllCategoryDiffs();
-        const hierarchy = this.categoryDB.getHierarchy();
+        const groups = this.categoryDB.getFlatGroups();
 
-        for (const group of hierarchy) {
-            this.setGroupSelection(group.name, sourceId, allDiffs);
+        for (const group of groups) {
+            this._setGroupCategorySelections(group.categories, sourceId, allDiffs);
         }
 
         this.renderCategoryTree();
@@ -502,12 +502,8 @@ class StarMeldApp {
         return sourceId;
     }
 
-    setGroupSelection(groupName, sourceId, allDiffs) {
-        const hierarchy = this.categoryDB.getHierarchy();
-        const group = hierarchy.find(g => g.name === groupName);
-        if (!group) return;
-
-        for (const cat of group.categories) {
+    _setGroupCategorySelections(categories, sourceId, allDiffs) {
+        for (const cat of categories) {
             if (sourceId) {
                 let hasModifications = false;
                 for (const [srcName, diffs] of allDiffs) {
@@ -528,6 +524,163 @@ class StarMeldApp {
         }
     }
 
+    _renderGroup(group, allDiffs) {
+        let groupHasModifications = false;
+        let groupModifiedCount = 0;
+
+        const groupSourcesMap = new Map();
+        for (const cat of group.categories) {
+            for (const [sourceName, diffs] of allDiffs) {
+                const catDiff = diffs.get(cat.name);
+                if (catDiff && catDiff.modified > 0) {
+                    groupHasModifications = true;
+                    groupModifiedCount += catDiff.modified;
+                    groupSourcesMap.set(sourceName,
+                        (groupSourcesMap.get(sourceName) || 0) + catDiff.modified);
+                }
+            }
+        }
+
+        const groupEl = document.createElement('div');
+        groupEl.className = 'category-group';
+
+        const headerEl = document.createElement('div');
+        headerEl.className = 'group-header' + (groupHasModifications ? ' expanded' : '');
+
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'arrow';
+        arrowSpan.textContent = '\u25B6';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'group-name';
+        nameSpan.textContent = group.name;
+
+        const statsSpan = document.createElement('span');
+        statsSpan.className = 'group-stats';
+        statsSpan.textContent = groupHasModifications
+            ? groupModifiedCount.toLocaleString() + ' modified'
+            : 'no changes';
+
+        headerEl.appendChild(arrowSpan);
+        headerEl.appendChild(nameSpan);
+        headerEl.appendChild(statsSpan);
+
+        if (groupHasModifications) {
+            const groupSourceEl = document.createElement('div');
+            groupSourceEl.className = 'group-source';
+            const groupSelect = document.createElement('select');
+            groupSelect.innerHTML = '<option value="">Stock (default)</option>';
+
+            for (const [srcId, count] of groupSourcesMap) {
+                const displayName = this.getSourceDisplayName(srcId);
+                groupSelect.innerHTML += `<option value="${srcId}">${displayName} (${count})</option>`;
+            }
+
+            const modifiableCats = group.categories.filter(cat => {
+                for (const [, diffs] of allDiffs) {
+                    const catDiff = diffs.get(cat.name);
+                    if (catDiff && catDiff.modified > 0) return true;
+                }
+                return false;
+            });
+            if (modifiableCats.length > 0) {
+                const selections = modifiableCats.map(cat => this.categorySelections.get(cat.name) || '');
+                if (selections.every(s => s && s === selections[0])) {
+                    groupSelect.value = selections[0];
+                }
+            }
+
+            groupSelect.addEventListener('click', (e) => e.stopPropagation());
+
+            groupSelect.addEventListener('change', () => {
+                this._setGroupCategorySelections(group.categories, groupSelect.value || '', allDiffs);
+                this.renderCategoryTree();
+                this.updateMergeButton();
+            });
+
+            groupSourceEl.appendChild(groupSelect);
+            headerEl.appendChild(groupSourceEl);
+        }
+
+        const categoriesEl = document.createElement('div');
+        categoriesEl.className = 'group-categories' + (groupHasModifications ? ' expanded' : '');
+
+        headerEl.addEventListener('click', (e) => {
+            if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
+            headerEl.classList.toggle('expanded');
+            categoriesEl.classList.toggle('expanded');
+        });
+
+        for (const cat of group.categories) {
+            const sourcesWithMods = [];
+            let totalMods = 0;
+
+            for (const [sourceName, diffs] of allDiffs) {
+                const catDiff = diffs.get(cat.name);
+                if (catDiff && catDiff.modified > 0) {
+                    sourcesWithMods.push({ id: sourceName, count: catDiff.modified });
+                    totalMods += catDiff.modified;
+                }
+            }
+
+            const row = document.createElement('div');
+            row.className = 'category-row';
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'category-name';
+            nameEl.textContent = cat.name;
+            nameEl.title = cat.description;
+
+            const modEl = document.createElement('div');
+            modEl.className = 'category-modified' + (totalMods === 0 ? ' none' : '');
+            modEl.textContent = totalMods > 0
+                ? `${totalMods} ${totalMods === 1 ? 'key' : 'keys'}`
+                : 'no changes';
+
+            const sourceEl = document.createElement('div');
+            sourceEl.className = 'category-source';
+
+            if (sourcesWithMods.length > 0) {
+                const select = document.createElement('select');
+                select.innerHTML = '<option value="">Stock (default)</option>';
+                for (const s of sourcesWithMods) {
+                    const displayName = this.getSourceDisplayName(s.id);
+                    select.innerHTML += `<option value="${s.id}">${displayName} (${s.count})</option>`;
+                }
+
+                const prevSelection = this.categorySelections.get(cat.name);
+                if (prevSelection && sourcesWithMods.some(s => s.id === prevSelection)) {
+                    select.value = prevSelection;
+                }
+
+                select.addEventListener('change', () => {
+                    if (select.value) {
+                        this.categorySelections.set(cat.name, select.value);
+                    } else {
+                        this.categorySelections.delete(cat.name);
+                    }
+                    this.updateMergeButton();
+                });
+
+                sourceEl.appendChild(select);
+            } else {
+                const select = document.createElement('select');
+                select.disabled = true;
+                select.innerHTML = '<option>Stock (no changes available)</option>';
+                sourceEl.appendChild(select);
+            }
+
+            row.appendChild(nameEl);
+            row.appendChild(modEl);
+            row.appendChild(sourceEl);
+            categoriesEl.appendChild(row);
+        }
+
+        groupEl.appendChild(headerEl);
+        groupEl.appendChild(categoriesEl);
+        return groupEl;
+    }
+
     renderCategoryTree() {
         const container = document.getElementById('category-tree');
 
@@ -541,162 +694,40 @@ class StarMeldApp {
 
         container.innerHTML = '';
 
-        for (const group of hierarchy) {
-            let groupHasModifications = false;
-            let groupModifiedCount = 0;
+        for (const { root, groups } of hierarchy) {
+            const rootEl = document.createElement('div');
+            rootEl.className = 'category-root';
 
-            const groupSourcesMap = new Map();
-            for (const cat of group.categories) {
-                for (const [sourceName, diffs] of allDiffs) {
-                    const catDiff = diffs.get(cat.name);
-                    if (catDiff && catDiff.modified > 0) {
-                        groupHasModifications = true;
-                        groupModifiedCount += catDiff.modified;
-                        groupSourcesMap.set(sourceName,
-                            (groupSourcesMap.get(sourceName) || 0) + catDiff.modified);
-                    }
-                }
-            }
+            const rootHeader = document.createElement('div');
+            rootHeader.className = 'root-header';
 
-            const groupEl = document.createElement('div');
-            groupEl.className = 'category-group';
+            const rootArrow = document.createElement('span');
+            rootArrow.className = 'arrow';
+            rootArrow.textContent = '\u25B6';
 
-            const headerEl = document.createElement('div');
-            headerEl.className = 'group-header' + (groupHasModifications ? ' expanded' : '');
+            const rootName = document.createElement('span');
+            rootName.className = 'root-name';
+            rootName.textContent = root;
 
-            const arrowSpan = document.createElement('span');
-            arrowSpan.className = 'arrow';
-            arrowSpan.textContent = '\u25B6';
+            rootHeader.appendChild(rootArrow);
+            rootHeader.appendChild(rootName);
 
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'group-name';
-            nameSpan.textContent = group.name;
+            const rootBody = document.createElement('div');
+            rootBody.className = 'root-body expanded';
 
-            const statsSpan = document.createElement('span');
-            statsSpan.className = 'group-stats';
-            statsSpan.textContent = groupHasModifications
-                ? groupModifiedCount.toLocaleString() + ' modified'
-                : 'no changes';
-
-            headerEl.appendChild(arrowSpan);
-            headerEl.appendChild(nameSpan);
-            headerEl.appendChild(statsSpan);
-
-            if (groupHasModifications) {
-                const groupSourceEl = document.createElement('div');
-                groupSourceEl.className = 'group-source';
-                const groupSelect = document.createElement('select');
-                groupSelect.innerHTML = '<option value="">Stock (default)</option>';
-
-                for (const [srcId, count] of groupSourcesMap) {
-                    const displayName = this.getSourceDisplayName(srcId);
-                    groupSelect.innerHTML += `<option value="${srcId}">${displayName} (${count})</option>`;
-                }
-
-                // Detect if all modifiable categories share the same selection
-                const modifiableCats = group.categories.filter(cat => {
-                    for (const [, diffs] of allDiffs) {
-                        const catDiff = diffs.get(cat.name);
-                        if (catDiff && catDiff.modified > 0) return true;
-                    }
-                    return false;
-                });
-                if (modifiableCats.length > 0) {
-                    const selections = modifiableCats.map(cat => this.categorySelections.get(cat.name) || '');
-                    if (selections.every(s => s && s === selections[0])) {
-                        groupSelect.value = selections[0];
-                    }
-                }
-
-                groupSelect.addEventListener('click', (e) => e.stopPropagation());
-
-                groupSelect.addEventListener('change', () => {
-                    this.setGroupSelection(group.name, groupSelect.value || '', allDiffs);
-                    this.renderCategoryTree();
-                    this.updateMergeButton();
-                });
-
-                groupSourceEl.appendChild(groupSelect);
-                headerEl.appendChild(groupSourceEl);
-            }
-
-            const categoriesEl = document.createElement('div');
-            categoriesEl.className = 'group-categories' + (groupHasModifications ? ' expanded' : '');
-
-            headerEl.addEventListener('click', (e) => {
-                if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
-                headerEl.classList.toggle('expanded');
-                categoriesEl.classList.toggle('expanded');
+            rootHeader.addEventListener('click', () => {
+                rootHeader.classList.toggle('expanded');
+                rootBody.classList.toggle('expanded');
             });
+            rootHeader.classList.add('expanded');
 
-            for (const cat of group.categories) {
-                const sourcesWithMods = [];
-                let totalMods = 0;
-
-                for (const [sourceName, diffs] of allDiffs) {
-                    const catDiff = diffs.get(cat.name);
-                    if (catDiff && catDiff.modified > 0) {
-                        sourcesWithMods.push({ id: sourceName, count: catDiff.modified });
-                        totalMods += catDiff.modified;
-                    }
-                }
-
-                const row = document.createElement('div');
-                row.className = 'category-row';
-
-                const nameEl = document.createElement('div');
-                nameEl.className = 'category-name';
-                nameEl.textContent = cat.name;
-                nameEl.title = cat.description;
-
-                const modEl = document.createElement('div');
-                modEl.className = 'category-modified' + (totalMods === 0 ? ' none' : '');
-                modEl.textContent = totalMods > 0
-                    ? `${totalMods} ${totalMods === 1 ? 'key' : 'keys'}`
-                    : 'no changes';
-
-                const sourceEl = document.createElement('div');
-                sourceEl.className = 'category-source';
-
-                if (sourcesWithMods.length > 0) {
-                    const select = document.createElement('select');
-                    select.innerHTML = '<option value="">Stock (default)</option>';
-                    for (const s of sourcesWithMods) {
-                        const displayName = this.getSourceDisplayName(s.id);
-                        select.innerHTML += `<option value="${s.id}">${displayName} (${s.count})</option>`;
-                    }
-
-                    const prevSelection = this.categorySelections.get(cat.name);
-                    if (prevSelection && sourcesWithMods.some(s => s.id === prevSelection)) {
-                        select.value = prevSelection;
-                    }
-
-                    select.addEventListener('change', () => {
-                        if (select.value) {
-                            this.categorySelections.set(cat.name, select.value);
-                        } else {
-                            this.categorySelections.delete(cat.name);
-                        }
-                        this.updateMergeButton();
-                    });
-
-                    sourceEl.appendChild(select);
-                } else {
-                    const select = document.createElement('select');
-                    select.disabled = true;
-                    select.innerHTML = '<option>Stock (no changes available)</option>';
-                    sourceEl.appendChild(select);
-                }
-
-                row.appendChild(nameEl);
-                row.appendChild(modEl);
-                row.appendChild(sourceEl);
-                categoriesEl.appendChild(row);
+            for (const group of groups) {
+                rootBody.appendChild(this._renderGroup(group, allDiffs));
             }
 
-            groupEl.appendChild(headerEl);
-            groupEl.appendChild(categoriesEl);
-            container.appendChild(groupEl);
+            rootEl.appendChild(rootHeader);
+            rootEl.appendChild(rootBody);
+            container.appendChild(rootEl);
         }
     }
 
@@ -1246,8 +1277,8 @@ class StarMeldApp {
         container.innerHTML = '';
         subContainer.innerHTML = '';
 
-        const hierarchy = this.categoryDB.getHierarchy();
-        if (!hierarchy || hierarchy.length === 0) return;
+        const flatGroups = this.categoryDB.getFlatGroups();
+        if (!flatGroups || flatGroups.length === 0) return;
 
         const rerunSearch = () => {
             const query = document.getElementById('customiser-search-input').value;
@@ -1267,7 +1298,7 @@ class StarMeldApp {
         });
         container.appendChild(allChip);
 
-        for (const group of hierarchy) {
+        for (const group of flatGroups) {
             const chip = document.createElement('button');
             chip.className = 'filter-chip';
             chip.textContent = group.name;

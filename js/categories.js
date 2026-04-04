@@ -5,8 +5,9 @@
 
 class CategoryDB {
     constructor() {
+        this.roots = [];
         this.groups = [];
-        this.rules = [];        // [{regex, category, group}] — ordered, first match wins
+        this.rules = [];        // [{regex, category, group, root}] — ordered, first match wins
         this.catchAll = 'Other';
         this.loaded = false;
     }
@@ -20,6 +21,7 @@ class CategoryDB {
         if (!response.ok) throw new Error(`Failed to load categories: ${response.statusText}`);
 
         const data = await response.json();
+        this.roots = data.roots || [];
         this.groups = data.groups;
         this.catchAll = data.catchAll || 'Other';
         this.rules = [];
@@ -31,6 +33,7 @@ class CategoryDB {
                         regex: new RegExp(pattern),
                         category: category.name,
                         group: group.name,
+                        root: group.root || null,
                         description: category.description
                     });
                 }
@@ -83,6 +86,21 @@ class CategoryDB {
     }
 
     /**
+     * Get the root name for a category.
+     * @param {string} categoryName - Category name
+     * @returns {string|null} Root name or null
+     */
+    getRoot(categoryName) {
+        if (categoryName === this.catchAll) return this.roots[0] || null;
+        for (const group of this.groups) {
+            for (const cat of group.categories) {
+                if (cat.name === categoryName) return group.root || null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get all category names in order.
      * @returns {string[]} Category names
      */
@@ -98,22 +116,60 @@ class CategoryDB {
     }
 
     /**
-     * Get the full group/category hierarchy for UI rendering.
-     * @returns {Array<{name: string, categories: Array<{name: string, description: string}>}>}
+     * Get the full root/group/category hierarchy for UI rendering.
+     * Groups with the same name under different roots are kept separate.
+     * @returns {Array<{root: string, groups: Array<{name: string, categories: Array<{name: string, description: string}>}>}>}
      */
     getHierarchy() {
-        const hierarchy = this.groups.map(g => ({
+        const rootMap = new Map();
+
+        for (const rootName of this.roots) {
+            rootMap.set(rootName, []);
+        }
+
+        for (const group of this.groups) {
+            const rootName = group.root || this.roots[0] || '';
+            if (!rootMap.has(rootName)) rootMap.set(rootName, []);
+            rootMap.get(rootName).push({
+                name: group.name,
+                categories: group.categories.map(c => ({
+                    name: c.name,
+                    description: c.description
+                }))
+            });
+        }
+
+        // Add catchAll to first root
+        const firstRoot = this.roots[0] || '';
+        if (rootMap.has(firstRoot)) {
+            rootMap.get(firstRoot).push({
+                name: this.catchAll,
+                categories: [{ name: this.catchAll, description: 'Keys not matching any other category' }]
+            });
+        }
+
+        return [...rootMap.entries()].map(([root, groups]) => ({ root, groups }));
+    }
+    /**
+     * Get a flat list of all groups with categories (ignoring roots).
+     * Used by code that doesn't need root-level grouping.
+     * @returns {Array<{name: string, root: string, categories: Array<{name: string, description: string}>}>}
+     */
+    getFlatGroups() {
+        const groups = this.groups.map(g => ({
             name: g.name,
+            root: g.root || this.roots[0] || '',
             categories: g.categories.map(c => ({
                 name: c.name,
                 description: c.description
             }))
         }));
-        hierarchy.push({
+        groups.push({
             name: this.catchAll,
+            root: this.roots[0] || '',
             categories: [{ name: this.catchAll, description: 'Keys not matching any other category' }]
         });
-        return hierarchy;
+        return groups;
     }
 }
 

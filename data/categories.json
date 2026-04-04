@@ -1,77 +1,82 @@
 {
+  "roots": ["Names & Labels", "Descriptions & Text"],
   "groups": [
     {
       "name": "Ship Components",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Coolers",
           "patterns": ["^item_Name(?:COOL|_COOL)_"],
-          "description": "Ship cooling systems"
+          "description": "Ship cooling system names"
         },
         {
           "name": "Power Plants",
           "patterns": ["^item_Name(?:POWR|_POWR)_"],
-          "description": "Ship power generation"
+          "description": "Ship power plant names"
         },
         {
           "name": "Quantum Drives",
           "patterns": ["^item_Name(?:QDRV|_QDRV)_"],
-          "description": "Quantum travel drives"
+          "description": "Quantum drive names"
         },
         {
           "name": "Shields",
           "patterns": ["^item_Name(?:SHLD|_SHLD)_"],
-          "description": "Shield generators"
+          "description": "Shield generator names"
         },
         {
           "name": "Radars",
           "patterns": ["^item_Name(?:RADR|_RADR)_"],
-          "description": "Radar and sensor arrays"
+          "description": "Radar and sensor array names"
         }
       ]
     },
     {
       "name": "Ordnance",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Missiles",
           "patterns": ["^item_Name(?:MISL|_MISL)_"],
-          "description": "Ship-launched missiles"
+          "description": "Ship-launched missile names"
         },
         {
           "name": "Torpedoes",
           "patterns": ["^item_Name(?:TORP|_TORP)_"],
-          "description": "Ship-launched torpedoes"
+          "description": "Ship-launched torpedo names"
         },
         {
           "name": "Bombs",
           "patterns": ["^item_Name(?:BOMB|_BOMB)_"],
-          "description": "Ship-dropped bombs"
+          "description": "Ship-dropped bomb names"
         },
         {
           "name": "Ground Missiles",
           "patterns": ["^item_Name(?:GMISL|_GMISL)_"],
-          "description": "Ground vehicle missiles"
+          "description": "Ground vehicle missile names"
         }
       ]
     },
     {
       "name": "Weapons & Turrets",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Ship Weapons",
           "patterns": ["^item_Name(?:WP_|WGN_|_WP_|_WGN_)"],
-          "description": "Ship-mounted guns and cannons"
+          "description": "Ship-mounted gun and cannon names"
         },
         {
           "name": "Turrets",
           "patterns": ["^item_Name(?:TURR|_TURR)_"],
-          "description": "Turret mounts and assemblies"
+          "description": "Turret mount and assembly names"
         }
       ]
     },
     {
       "name": "Vehicles",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Vehicle Names",
@@ -87,21 +92,17 @@
     },
     {
       "name": "Items",
+      "root": "Names & Labels",
       "categories": [
-        {
-          "name": "Item Descriptions",
-          "patterns": ["^item_Desc"],
-          "description": "Detailed item description text"
-        },
         {
           "name": "Clothing & Armor",
           "patterns": ["^item_Name.*(?:armor|undersuit|helmet|shirt|pants|jacket|boots|shoes|gloves|hat|backpack)"],
-          "description": "Wearable clothing and armor pieces"
+          "description": "Wearable clothing and armor piece names"
         },
         {
           "name": "Food & Drink",
           "patterns": ["^item_Name(?:Food|Drink|_Food_|_Drink_)"],
-          "description": "Consumable food and beverages"
+          "description": "Consumable food and beverage names"
         },
         {
           "name": "Commodities",
@@ -116,12 +117,13 @@
         {
           "name": "Other Items",
           "patterns": ["^item_Name"],
-          "description": "All other items (flairs, tools, ammo, etc.)"
+          "description": "All other item names (flairs, tools, ammo, etc.)"
         }
       ]
     },
     {
       "name": "Locations",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Stanton System",
@@ -147,6 +149,7 @@
     },
     {
       "name": "UI & HUD",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "MobiGlas",
@@ -182,6 +185,7 @@
     },
     {
       "name": "Game Content",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Mission Text",
@@ -192,16 +196,6 @@
           "name": "Contracts & Factions",
           "patterns": ["^(?:headhunters_|Headhunters_|Covalex_|DataHeist|TheCollector|Hockrow|vaughn|Foxwell|GoblinG|storm_|cfp_|CFP_|Shubin_|MiningClaim|DynamicEvent|RR_|ASD_|planetcollect|BitZeros|FTL_|RedWind|deadsaints|EckhartSecurity|Kaboos|KillShip|boarders_|ShipAmbush|ShipWaveAttack|bounty_fps|DefendShips|HaulCargo|hauling_)"],
           "description": "Contractor missions, faction-specific text, and dynamic events"
-        },
-        {
-          "name": "Dialogue",
-          "patterns": ["^Dlg_"],
-          "description": "NPC dialogue lines"
-        },
-        {
-          "name": "Reputation",
-          "patterns": ["^(?:Rep|.*_RepUI_)"],
-          "description": "Reputation standings and faction reputation UI"
         },
         {
           "name": "Notifications",
@@ -237,16 +231,12 @@
     },
     {
       "name": "Data & System",
+      "root": "Names & Labels",
       "categories": [
         {
           "name": "Human Names",
           "patterns": ["^Human_"],
           "description": "NPC name generation (surnames, first names, nicknames)"
-        },
-        {
-          "name": "Voice & Audio",
-          "patterns": ["^(?:DXSM_|DXSH_|PH_)"],
-          "description": "Voice line subtitles, audio cue text, and phoneme data"
         },
         {
           "name": "Input Bindings",
@@ -292,6 +282,117 @@
           "name": "Text & Misc System",
           "patterns": ["^(?:text_|RN_|quantum_|interiormap_|SC_)"],
           "description": "System text, quantum travel, and miscellaneous labels"
+        }
+      ]
+    },
+    {
+      "name": "Ship Components",
+      "root": "Descriptions & Text",
+      "categories": [
+        {
+          "name": "Cooler Descriptions",
+          "patterns": ["^item_Desc(?:COOL|_COOL)_"],
+          "description": "Ship cooling system descriptions"
+        },
+        {
+          "name": "Power Plant Descriptions",
+          "patterns": ["^item_Desc(?:POWR|_POWR)_"],
+          "description": "Ship power plant descriptions"
+        },
+        {
+          "name": "Quantum Drive Descriptions",
+          "patterns": ["^item_Desc(?:QDRV|_QDRV)_"],
+          "description": "Quantum drive descriptions"
+        },
+        {
+          "name": "Shield Descriptions",
+          "patterns": ["^item_Desc(?:SHLD|_SHLD)_"],
+          "description": "Shield generator descriptions"
+        },
+        {
+          "name": "Radar Descriptions",
+          "patterns": ["^item_Desc(?:RADR|_RADR)_"],
+          "description": "Radar and sensor array descriptions"
+        }
+      ]
+    },
+    {
+      "name": "Ordnance",
+      "root": "Descriptions & Text",
+      "categories": [
+        {
+          "name": "Missile Descriptions",
+          "patterns": ["^item_Desc(?:MISL|_MISL)_"],
+          "description": "Ship-launched missile descriptions"
+        },
+        {
+          "name": "Torpedo Descriptions",
+          "patterns": ["^item_Desc(?:TORP|_TORP)_"],
+          "description": "Ship-launched torpedo descriptions"
+        },
+        {
+          "name": "Bomb Descriptions",
+          "patterns": ["^item_Desc(?:BOMB|_BOMB)_"],
+          "description": "Ship-dropped bomb descriptions"
+        },
+        {
+          "name": "Ground Missile Descriptions",
+          "patterns": ["^item_Desc(?:GMISL|_GMISL)_"],
+          "description": "Ground vehicle missile descriptions"
+        }
+      ]
+    },
+    {
+      "name": "Weapons & Turrets",
+      "root": "Descriptions & Text",
+      "categories": [
+        {
+          "name": "Weapon Descriptions",
+          "patterns": ["^item_Desc(?:WP_|WGN_|_WP_|_WGN_)"],
+          "description": "Ship-mounted gun and cannon descriptions"
+        },
+        {
+          "name": "Turret Descriptions",
+          "patterns": ["^item_Desc(?:TURR|_TURR)_"],
+          "description": "Turret mount and assembly descriptions"
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "root": "Descriptions & Text",
+      "categories": [
+        {
+          "name": "Other Item Descriptions",
+          "patterns": ["^item_Desc"],
+          "description": "All item descriptions"
+        }
+      ]
+    },
+    {
+      "name": "Game Content",
+      "root": "Descriptions & Text",
+      "categories": [
+        {
+          "name": "Dialogue",
+          "patterns": ["^Dlg_"],
+          "description": "NPC dialogue lines"
+        },
+        {
+          "name": "Reputation",
+          "patterns": ["^(?:Rep|.*_RepUI_)"],
+          "description": "Reputation standings and faction reputation UI"
+        }
+      ]
+    },
+    {
+      "name": "Data & System",
+      "root": "Descriptions & Text",
+      "categories": [
+        {
+          "name": "Voice & Audio",
+          "patterns": ["^(?:DXSM_|DXSH_|PH_)"],
+          "description": "Voice line subtitles, audio cue text, and phoneme data"
         }
       ]
     }

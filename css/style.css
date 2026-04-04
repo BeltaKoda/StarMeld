@@ -295,6 +295,55 @@ body {
     margin-bottom: 4px;
 }
 
+/* Root-level sections (Names & Labels / Descriptions & Text) */
+.category-root {
+    margin-bottom: 12px;
+}
+
+.root-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 4px;
+}
+
+.root-header:hover {
+    background: var(--bg-hover);
+}
+
+.root-header .arrow {
+    color: var(--accent);
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.root-header.expanded .arrow {
+    transform: rotate(90deg);
+}
+
+.root-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.root-body {
+    display: none;
+    padding-left: 8px;
+}
+
+.root-body.expanded {
+    display: block;
+}
+
 .group-header {
     display: flex;
     align-items: center;
