@@ -1351,6 +1351,24 @@ body {
     font-size: 12px;
 }
 
+/* Design variant labels (temporary for comparison) */
+.design-variant {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.design-variant-label {
+    color: var(--accent);
+    font-size: 14px;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Shared overlap styles */
 .overlap-details {
     margin-top: 4px;
     font-size: 12px;
@@ -1371,15 +1389,108 @@ body {
     padding-left: 8px;
 }
 
-.overlap-group-row {
-    display: flex;
-    justify-content: space-between;
-    max-width: 300px;
-    padding: 1px 0;
+.overlap-group-name {
     color: var(--text-secondary);
 }
 
 .overlap-group-count {
+    color: var(--text-disabled);
+    margin-left: 8px;
+}
+
+/* Design A: Nested Accordion */
+.overlap-group-accordion {
+    margin: 2px 0;
+}
+
+.overlap-group-accordion summary {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    color: var(--text-secondary);
+}
+
+.overlap-group-accordion summary:hover {
+    color: var(--text-primary);
+}
+
+.overlap-sub-list {
+    padding-left: 16px;
+    margin: 2px 0;
+}
+
+.overlap-sub-row {
+    display: flex;
+    gap: 8px;
+    padding: 1px 0;
+}
+
+.overlap-sub-name {
+    color: var(--text-disabled);
+}
+
+.overlap-sub-count {
+    color: var(--text-disabled);
+}
+
+/* Design B: Inline Sub-categories */
+.overlap-inline-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+    padding: 3px 0;
+}
+
+.overlap-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-left: 4px;
+}
+
+.overlap-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: var(--text-disabled);
+}
+
+/* Design C: Table View */
+.overlap-table {
+    width: 100%;
+    max-width: 400px;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.overlap-table th {
+    text-align: left;
+    color: var(--text-disabled);
+    border-bottom: 1px solid var(--border);
+    padding: 3px 8px;
+    font-weight: 500;
+}
+
+.overlap-table td {
+    padding: 2px 8px;
+}
+
+.overlap-table-group {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.overlap-table-group td {
+    padding-top: 6px;
+}
+
+.overlap-table-sub {
     color: var(--text-disabled);
 }
 

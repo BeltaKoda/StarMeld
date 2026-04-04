@@ -850,6 +850,64 @@ class StarMeldApp {
         this.updatePriorityMergeButton();
     }
 
+    /**
+     * Classify overlapped keys into group -> sub-category hierarchy.
+     */
+    _buildOverlapHierarchy(overlappedKeys) {
+        const hierarchy = new Map(); // group -> Map(subcategory -> count)
+        for (const key of overlappedKeys) {
+            const category = this.categoryDB.classify(key);
+            const group = this.categoryDB.getGroup(category) || 'Other';
+            if (!hierarchy.has(group)) hierarchy.set(group, new Map());
+            const subs = hierarchy.get(group);
+            subs.set(category, (subs.get(category) || 0) + 1);
+        }
+        // Sort groups by total count descending
+        return [...hierarchy.entries()]
+            .map(([group, subs]) => {
+                const total = [...subs.values()].reduce((a, b) => a + b, 0);
+                const subcategories = [...subs.entries()].sort((a, b) => b[1] - a[1]);
+                return { group, total, subcategories };
+            })
+            .sort((a, b) => b.total - a.total);
+    }
+
+    _renderDesignA(hierarchy) {
+        return hierarchy.map(({ group, total, subcategories }) => {
+            const subLines = subcategories.map(([cat, count]) =>
+                `<div class="overlap-sub-row"><span class="overlap-sub-name">${this.escapeHtml(cat)}</span><span class="overlap-sub-count">${count}</span></div>`
+            ).join('');
+            return `<details class="overlap-group-accordion">
+                <summary><span class="overlap-group-name">${this.escapeHtml(group)}</span><span class="overlap-group-count">${total}</span></summary>
+                <div class="overlap-sub-list">${subLines}</div>
+            </details>`;
+        }).join('');
+    }
+
+    _renderDesignB(hierarchy) {
+        return hierarchy.map(({ group, total, subcategories }) => {
+            const chips = subcategories.map(([cat, count]) =>
+                `<span class="overlap-chip">${this.escapeHtml(cat)} ${count}</span>`
+            ).join('');
+            return `<div class="overlap-inline-row">
+                <span class="overlap-group-name">${this.escapeHtml(group)}</span>
+                <span class="overlap-group-count">${total}</span>
+                <div class="overlap-chips">${chips}</div>
+            </div>`;
+        }).join('');
+    }
+
+    _renderDesignC(hierarchy) {
+        let rows = '';
+        hierarchy.forEach(({ group, total, subcategories }) => {
+            rows += `<tr class="overlap-table-group"><td colspan="2">${this.escapeHtml(group)}</td><td>${total}</td></tr>`;
+            subcategories.forEach(([cat, count]) => {
+                rows += `<tr class="overlap-table-sub"><td></td><td>${this.escapeHtml(cat)}</td><td>${count}</td></tr>`;
+            });
+        });
+        return `<table class="overlap-table"><thead><tr><th>Group</th><th>Sub-category</th><th>Keys</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
     updatePriorityStats() {
         const container = document.getElementById('priority-stats');
         if (!container) return;
@@ -861,49 +919,64 @@ class StarMeldApp {
 
         const { overriddenKeys, perSource } = this.mergeEngine.computePriorityStats(this.priorityOrder);
 
+        // Build overlap data for sources that have overlaps
+        const overlapData = perSource.map(ps => ({
+            ...ps,
+            hierarchy: ps.overlapped > 0 ? this._buildOverlapHierarchy(ps.overlappedKeys) : []
+        }));
+
         container.innerHTML = '';
 
-        perSource.forEach((ps, index) => {
-            const sourceDef = this.getSourceDef(ps.sourceId);
-            const custom = this.customPacks.get(ps.sourceId);
-            const name = sourceDef ? sourceDef.name : (custom ? custom.name : ps.sourceId);
+        // --- Render 3 design variations ---
+        const designs = [
+            { label: 'Design A: Nested Accordion', render: (h) => this._renderDesignA(h) },
+            { label: 'Design B: Inline Sub-categories', render: (h) => this._renderDesignB(h) },
+            { label: 'Design C: Table View', render: (h) => this._renderDesignC(h) },
+        ];
 
-            const row = document.createElement('div');
-            row.className = 'priority-stat-row';
+        for (const design of designs) {
+            const section = document.createElement('div');
+            section.className = 'design-variant';
 
-            let overlapText = '';
-            if (ps.overlapped > 0) {
-                const groupCounts = new Map();
-                for (const key of ps.overlappedKeys) {
-                    const category = this.categoryDB.classify(key);
-                    const group = this.categoryDB.getGroup(category) || 'Other';
-                    groupCounts.set(group, (groupCounts.get(group) || 0) + 1);
+            const heading = document.createElement('h3');
+            heading.className = 'design-variant-label';
+            heading.textContent = design.label;
+            section.appendChild(heading);
+
+            overlapData.forEach((ps, index) => {
+                const sourceDef = this.getSourceDef(ps.sourceId);
+                const custom = this.customPacks.get(ps.sourceId);
+                const name = sourceDef ? sourceDef.name : (custom ? custom.name : ps.sourceId);
+
+                const row = document.createElement('div');
+                row.className = 'priority-stat-row';
+
+                let overlapHtml = '';
+                if (ps.overlapped > 0) {
+                    overlapHtml = `
+                        <span class="stat-overlapped">(${ps.overlapped.toLocaleString()} overlapped by higher priority)</span>
+                        <details class="overlap-details">
+                            <summary>Show overlap details</summary>
+                            <div class="overlap-group-list">${design.render(ps.hierarchy)}</div>
+                        </details>`;
                 }
-                const sorted = [...groupCounts.entries()].sort((a, b) => b[1] - a[1]);
-                const groupLines = sorted.map(([g, c]) => `<div class="overlap-group-row"><span class="overlap-group-name">${this.escapeHtml(g)}</span><span class="overlap-group-count">${c.toLocaleString()}</span></div>`).join('');
 
-                overlapText = `
-                    <span class="stat-overlapped">(${ps.overlapped.toLocaleString()} overlapped by higher priority)</span>
-                    <details class="overlap-details">
-                        <summary>Show overlap details</summary>
-                        <div class="overlap-group-list">${groupLines}</div>
-                    </details>`;
-            }
+                row.innerHTML = `
+                    <span class="stat-priority">${index + 1}</span>
+                    <span class="stat-name">${this.escapeHtml(name)}</span>
+                    <span class="stat-applied">${ps.applied.toLocaleString()} keys applied</span>
+                    ${overlapHtml}
+                `;
+                section.appendChild(row);
+            });
 
-            row.innerHTML = `
-                <span class="stat-priority">${index + 1}</span>
-                <span class="stat-name">${this.escapeHtml(name)}</span>
-                <span class="stat-applied">${ps.applied.toLocaleString()} keys applied</span>
-                ${overlapText}
-            `;
+            const total = document.createElement('div');
+            total.className = 'priority-stat-total';
+            total.textContent = `Total: ${overriddenKeys.toLocaleString()} keys changed from stock`;
+            section.appendChild(total);
 
-            container.appendChild(row);
-        });
-
-        const total = document.createElement('div');
-        total.className = 'priority-stat-total';
-        total.textContent = `Total: ${overriddenKeys.toLocaleString()} keys changed from stock`;
-        container.appendChild(total);
+            container.appendChild(section);
+        }
     }
 
     updatePriorityMergeButton() {
