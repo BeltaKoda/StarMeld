@@ -189,20 +189,40 @@ class StarMeldApp {
     }
 
     formatRelativeAge(date) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = date.getDate();
+        const suffix = day === 1 || day === 21 || day === 31 ? 'st'
+                     : day === 2 || day === 22 ? 'nd'
+                     : day === 3 || day === 23 ? 'rd' : 'th';
+        const dateStr = `${months[date.getMonth()]} ${day}${suffix}`;
+
         const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-        if (seconds < 86400) return 'today';
-        const days = Math.floor(seconds / 86400);
-        if (days === 1) return '1 day old';
-        if (days < 14) return `${days} days old`;
-        const weeks = Math.floor(days / 7);
-        if (weeks === 1) return '1 week old';
-        if (days < 60) return `${weeks} weeks old`;
-        const months = Math.floor(days / 30);
-        if (months === 1) return '1 month old';
-        if (days < 365) return `${months} months old`;
-        const years = Math.floor(days / 365);
-        if (years === 1) return '1 year old';
-        return `${years} years old`;
+        let relative;
+        if (seconds < 86400) relative = 'today';
+        else {
+            const days = Math.floor(seconds / 86400);
+            if (days === 1) relative = '1 day ago';
+            else if (days < 14) relative = `${days} days ago`;
+            else {
+                const weeks = Math.floor(days / 7);
+                if (weeks === 1) relative = '1 week ago';
+                else if (days < 60) relative = `${weeks} weeks ago`;
+                else {
+                    const mos = Math.floor(days / 30);
+                    if (mos === 1) relative = '1 month ago';
+                    else if (days < 365) relative = `${mos} months ago`;
+                    else {
+                        const years = Math.floor(days / 365);
+                        relative = years === 1 ? '1 year ago' : `${years} years ago`;
+                    }
+                }
+            }
+        }
+
+        return relative === 'today'
+            ? `Last updated ${dateStr}, today`
+            : `Last updated ${dateStr}, ${relative}`;
     }
 
     // --- Stock Loading ---
