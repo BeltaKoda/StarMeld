@@ -1,9 +1,9 @@
 {
-  "roots": ["Equipment", "World", "Descriptions"],
+  "roots": ["Equipment Names", "Everything Else"],
   "groups": [
     {
       "name": "Ship Components",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Coolers",
@@ -34,7 +34,7 @@
     },
     {
       "name": "Ordnance",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Missiles",
@@ -60,7 +60,7 @@
     },
     {
       "name": "Weapons & Turrets",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Ship Weapons",
@@ -76,7 +76,7 @@
     },
     {
       "name": "Vehicles",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Vehicle Names",
@@ -92,7 +92,7 @@
     },
     {
       "name": "Items",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Clothing & Armor",
@@ -123,7 +123,7 @@
     },
     {
       "name": "Game Content",
-      "root": "World",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Mission Text",
@@ -169,7 +169,7 @@
     },
     {
       "name": "Locations",
-      "root": "World",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Stanton System",
@@ -195,7 +195,7 @@
     },
     {
       "name": "UI & HUD",
-      "root": "World",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "MobiGlas",
@@ -231,7 +231,7 @@
     },
     {
       "name": "Data & System",
-      "root": "World",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Human Names",
@@ -287,7 +287,7 @@
     },
     {
       "name": "Ship Components",
-      "root": "Descriptions",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Cooler Descriptions",
@@ -318,7 +318,7 @@
     },
     {
       "name": "Ordnance",
-      "root": "Descriptions",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Missile Descriptions",
@@ -344,7 +344,7 @@
     },
     {
       "name": "Weapons & Turrets",
-      "root": "Descriptions",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Weapon Descriptions",
@@ -360,7 +360,7 @@
     },
     {
       "name": "Items",
-      "root": "Descriptions",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Other Item Descriptions",
@@ -371,7 +371,7 @@
     },
     {
       "name": "Game Content",
-      "root": "Descriptions",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Dialogue",
@@ -387,7 +387,7 @@
     },
     {
       "name": "Data & System",
-      "root": "Descriptions",
+      "root": "Everything Else",
       "categories": [
         {
           "name": "Voice & Audio",

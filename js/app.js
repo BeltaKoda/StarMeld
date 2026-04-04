@@ -27,7 +27,10 @@ class StarMeldApp {
     }
 
     async init() {
-        await this.categoryDB.load();
+        // Load saved layout preference or default to 'a'
+        this.currentLayout = localStorage.getItem('starmeld-layout') || 'a';
+        const layoutUrl = this._getLayoutUrl(this.currentLayout);
+        await this.categoryDB.load(layoutUrl);
         this.mergeEngine = new MergeEngine(this.categoryDB);
         this.bindEvents();
         this.renderPackList();
@@ -35,6 +38,45 @@ class StarMeldApp {
         this.loadCategoryDb();
         this.renderCustomiserFilters();
         this.restoreCustomisations();
+        this._initLayoutSwitcher();
+    }
+
+    _getLayoutUrl(layout) {
+        const urls = {
+            'a': 'data/categories-a.json',
+            'b': 'data/categories-b.json',
+            'c': 'data/categories-c.json'
+        };
+        return urls[layout] || urls['a'];
+    }
+
+    _initLayoutSwitcher() {
+        const buttons = document.querySelectorAll('.layout-btn');
+        buttons.forEach(btn => {
+            if (btn.dataset.layout === this.currentLayout) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            btn.addEventListener('click', () => this._switchLayout(btn.dataset.layout));
+        });
+    }
+
+    async _switchLayout(layout) {
+        if (layout === this.currentLayout) return;
+        this.currentLayout = layout;
+        localStorage.setItem('starmeld-layout', layout);
+
+        document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.layout-btn[data-layout="${layout}"]`).classList.add('active');
+
+        await this.categoryDB.reload(this._getLayoutUrl(layout));
+        this.mergeEngine.categoryDB = this.categoryDB;
+        this.categorySelections.clear();
+        this.renderCategoryTree();
+        this.updateMergeButton();
+        this.renderCustomiserFilters();
+        this.updatePriorityStats();
     }
 
     bindEvents() {

@@ -44,6 +44,15 @@ class CategoryDB {
     }
 
     /**
+     * Reload with a different category JSON URL.
+     * @param {string} url - URL to new categories JSON
+     */
+    async reload(url) {
+        this.loaded = false;
+        await this.load(url);
+    }
+
+    /**
      * Classify a single key into a category name.
      * @param {string} key - INI key to classify
      * @returns {string} Category name

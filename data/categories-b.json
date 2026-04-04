@@ -1,9 +1,9 @@
 {
-  "roots": ["Equipment", "World", "Descriptions"],
+  "roots": ["Equipment & Items", "Game World"],
   "groups": [
     {
       "name": "Ship Components",
-      "root": "Equipment",
+      "root": "Equipment & Items",
       "categories": [
         {
           "name": "Coolers",
@@ -29,12 +29,37 @@
           "name": "Radars",
           "patterns": ["^item_Name(?:RADR|_RADR)_"],
           "description": "Radar and sensor array names"
+        },
+        {
+          "name": "Cooler Descriptions",
+          "patterns": ["^item_Desc(?:COOL|_COOL)_"],
+          "description": "Ship cooling system descriptions"
+        },
+        {
+          "name": "Power Plant Descriptions",
+          "patterns": ["^item_Desc(?:POWR|_POWR)_"],
+          "description": "Ship power plant descriptions"
+        },
+        {
+          "name": "Quantum Drive Descriptions",
+          "patterns": ["^item_Desc(?:QDRV|_QDRV)_"],
+          "description": "Quantum drive descriptions"
+        },
+        {
+          "name": "Shield Descriptions",
+          "patterns": ["^item_Desc(?:SHLD|_SHLD)_"],
+          "description": "Shield generator descriptions"
+        },
+        {
+          "name": "Radar Descriptions",
+          "patterns": ["^item_Desc(?:RADR|_RADR)_"],
+          "description": "Radar and sensor array descriptions"
         }
       ]
     },
     {
       "name": "Ordnance",
-      "root": "Equipment",
+      "root": "Equipment & Items",
       "categories": [
         {
           "name": "Missiles",
@@ -55,12 +80,32 @@
           "name": "Ground Missiles",
           "patterns": ["^item_Name(?:GMISL|_GMISL)_"],
           "description": "Ground vehicle missile names"
+        },
+        {
+          "name": "Missile Descriptions",
+          "patterns": ["^item_Desc(?:MISL|_MISL)_"],
+          "description": "Ship-launched missile descriptions"
+        },
+        {
+          "name": "Torpedo Descriptions",
+          "patterns": ["^item_Desc(?:TORP|_TORP)_"],
+          "description": "Ship-launched torpedo descriptions"
+        },
+        {
+          "name": "Bomb Descriptions",
+          "patterns": ["^item_Desc(?:BOMB|_BOMB)_"],
+          "description": "Ship-dropped bomb descriptions"
+        },
+        {
+          "name": "Ground Missile Descriptions",
+          "patterns": ["^item_Desc(?:GMISL|_GMISL)_"],
+          "description": "Ground vehicle missile descriptions"
         }
       ]
     },
     {
       "name": "Weapons & Turrets",
-      "root": "Equipment",
+      "root": "Equipment & Items",
       "categories": [
         {
           "name": "Ship Weapons",
@@ -71,12 +116,22 @@
           "name": "Turrets",
           "patterns": ["^item_Name(?:TURR|_TURR)_"],
           "description": "Turret mount and assembly names"
+        },
+        {
+          "name": "Weapon Descriptions",
+          "patterns": ["^item_Desc(?:WP_|WGN_|_WP_|_WGN_)"],
+          "description": "Ship-mounted gun and cannon descriptions"
+        },
+        {
+          "name": "Turret Descriptions",
+          "patterns": ["^item_Desc(?:TURR|_TURR)_"],
+          "description": "Turret mount and assembly descriptions"
         }
       ]
     },
     {
       "name": "Vehicles",
-      "root": "Equipment",
+      "root": "Equipment & Items",
       "categories": [
         {
           "name": "Vehicle Names",
@@ -92,7 +147,7 @@
     },
     {
       "name": "Items",
-      "root": "Equipment",
+      "root": "Equipment & Items",
       "categories": [
         {
           "name": "Clothing & Armor",
@@ -118,12 +173,17 @@
           "name": "Other Items",
           "patterns": ["^item_Name"],
           "description": "All other item names (flairs, tools, ammo, etc.)"
+        },
+        {
+          "name": "Other Item Descriptions",
+          "patterns": ["^item_Desc"],
+          "description": "All item descriptions"
         }
       ]
     },
     {
       "name": "Game Content",
-      "root": "World",
+      "root": "Game World",
       "categories": [
         {
           "name": "Mission Text",
@@ -164,12 +224,22 @@
           "name": "PU Narrative",
           "patterns": ["^PU_(?!UI_)"],
           "description": "Persistent Universe narrative text, NPC comms, and mission dialogue"
+        },
+        {
+          "name": "Dialogue",
+          "patterns": ["^Dlg_"],
+          "description": "NPC dialogue lines"
+        },
+        {
+          "name": "Reputation",
+          "patterns": ["^(?:Rep|.*_RepUI_)"],
+          "description": "Reputation standings and faction reputation UI"
         }
       ]
     },
     {
       "name": "Locations",
-      "root": "World",
+      "root": "Game World",
       "categories": [
         {
           "name": "Stanton System",
@@ -195,7 +265,7 @@
     },
     {
       "name": "UI & HUD",
-      "root": "World",
+      "root": "Game World",
       "categories": [
         {
           "name": "MobiGlas",
@@ -231,7 +301,7 @@
     },
     {
       "name": "Data & System",
-      "root": "World",
+      "root": "Game World",
       "categories": [
         {
           "name": "Human Names",
@@ -282,113 +352,7 @@
           "name": "Text & Misc System",
           "patterns": ["^(?:text_|RN_|quantum_|interiormap_|SC_)"],
           "description": "System text, quantum travel, and miscellaneous labels"
-        }
-      ]
-    },
-    {
-      "name": "Ship Components",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Cooler Descriptions",
-          "patterns": ["^item_Desc(?:COOL|_COOL)_"],
-          "description": "Ship cooling system descriptions"
         },
-        {
-          "name": "Power Plant Descriptions",
-          "patterns": ["^item_Desc(?:POWR|_POWR)_"],
-          "description": "Ship power plant descriptions"
-        },
-        {
-          "name": "Quantum Drive Descriptions",
-          "patterns": ["^item_Desc(?:QDRV|_QDRV)_"],
-          "description": "Quantum drive descriptions"
-        },
-        {
-          "name": "Shield Descriptions",
-          "patterns": ["^item_Desc(?:SHLD|_SHLD)_"],
-          "description": "Shield generator descriptions"
-        },
-        {
-          "name": "Radar Descriptions",
-          "patterns": ["^item_Desc(?:RADR|_RADR)_"],
-          "description": "Radar and sensor array descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Ordnance",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Missile Descriptions",
-          "patterns": ["^item_Desc(?:MISL|_MISL)_"],
-          "description": "Ship-launched missile descriptions"
-        },
-        {
-          "name": "Torpedo Descriptions",
-          "patterns": ["^item_Desc(?:TORP|_TORP)_"],
-          "description": "Ship-launched torpedo descriptions"
-        },
-        {
-          "name": "Bomb Descriptions",
-          "patterns": ["^item_Desc(?:BOMB|_BOMB)_"],
-          "description": "Ship-dropped bomb descriptions"
-        },
-        {
-          "name": "Ground Missile Descriptions",
-          "patterns": ["^item_Desc(?:GMISL|_GMISL)_"],
-          "description": "Ground vehicle missile descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Weapons & Turrets",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Weapon Descriptions",
-          "patterns": ["^item_Desc(?:WP_|WGN_|_WP_|_WGN_)"],
-          "description": "Ship-mounted gun and cannon descriptions"
-        },
-        {
-          "name": "Turret Descriptions",
-          "patterns": ["^item_Desc(?:TURR|_TURR)_"],
-          "description": "Turret mount and assembly descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Items",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Other Item Descriptions",
-          "patterns": ["^item_Desc"],
-          "description": "All item descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Game Content",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Dialogue",
-          "patterns": ["^Dlg_"],
-          "description": "NPC dialogue lines"
-        },
-        {
-          "name": "Reputation",
-          "patterns": ["^(?:Rep|.*_RepUI_)"],
-          "description": "Reputation standings and faction reputation UI"
-        }
-      ]
-    },
-    {
-      "name": "Data & System",
-      "root": "Descriptions",
-      "categories": [
         {
           "name": "Voice & Audio",
           "patterns": ["^(?:DXSM_|DXSH_|PH_)"],
