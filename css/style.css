@@ -1351,6 +1351,38 @@ body {
     font-size: 12px;
 }
 
+.overlap-details {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.overlap-details summary {
+    color: var(--accent);
+    cursor: pointer;
+    user-select: none;
+}
+
+.overlap-details summary:hover {
+    text-decoration: underline;
+}
+
+.overlap-group-list {
+    margin-top: 4px;
+    padding-left: 8px;
+}
+
+.overlap-group-row {
+    display: flex;
+    justify-content: space-between;
+    max-width: 300px;
+    padding: 1px 0;
+    color: var(--text-secondary);
+}
+
+.overlap-group-count {
+    color: var(--text-disabled);
+}
+
 .priority-stat-total {
     padding: 10px 14px;
     border-top: 2px solid var(--border);

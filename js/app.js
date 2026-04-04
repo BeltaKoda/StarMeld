@@ -873,7 +873,21 @@ class StarMeldApp {
 
             let overlapText = '';
             if (ps.overlapped > 0) {
-                overlapText = `<span class="stat-overlapped">(${ps.overlapped.toLocaleString()} overlapped by higher priority)</span>`;
+                const groupCounts = new Map();
+                for (const key of ps.overlappedKeys) {
+                    const category = this.categoryDB.classify(key);
+                    const group = this.categoryDB.getGroup(category) || 'Other';
+                    groupCounts.set(group, (groupCounts.get(group) || 0) + 1);
+                }
+                const sorted = [...groupCounts.entries()].sort((a, b) => b[1] - a[1]);
+                const groupLines = sorted.map(([g, c]) => `<div class="overlap-group-row"><span class="overlap-group-name">${this.escapeHtml(g)}</span><span class="overlap-group-count">${c.toLocaleString()}</span></div>`).join('');
+
+                overlapText = `
+                    <span class="stat-overlapped">(${ps.overlapped.toLocaleString()} overlapped by higher priority)</span>
+                    <details class="overlap-details">
+                        <summary>Show overlap details</summary>
+                        <div class="overlap-group-list">${groupLines}</div>
+                    </details>`;
             }
 
             row.innerHTML = `

@@ -207,12 +207,12 @@ class MergeEngine {
     /**
      * Compute priority merge stats without building the full merged map.
      * @param {string[]} orderedSources - Source IDs in priority order (index 0 = highest)
-     * @returns {{overriddenKeys: number, perSource: Array<{sourceId: string, applied: number, overlapped: number}>}}
+     * @returns {{overriddenKeys: number, perSource: Array<{sourceId: string, applied: number, overlapped: number, overlappedKeys: string[]}>}}
      */
     computePriorityStats(orderedSources) {
         if (!this.stock) throw new Error('Stock not loaded');
 
-        const perSource = orderedSources.map(id => ({ sourceId: id, applied: 0, overlapped: 0 }));
+        const perSource = orderedSources.map(id => ({ sourceId: id, applied: 0, overlapped: 0, overlappedKeys: [] }));
         let overriddenKeys = 0;
 
         for (const [key, stockValue] of this.stock) {
@@ -230,6 +230,7 @@ class MergeEngine {
                         claimed = true;
                     } else {
                         perSource[i].overlapped++;
+                        perSource[i].overlappedKeys.push(key);
                     }
                 }
             }
