@@ -172,18 +172,75 @@ class StarMeldApp {
         document.getElementById('customiser-clear-btn').addEventListener('click', () => this.clearCustomisations());
     }
 
+    // --- File Age ---
+
+    async fetchFileAge(source) {
+        try {
+            const response = await fetch(
+                `https://api.github.com/repos/${source.repo}/commits?path=${source.path}&per_page=1`
+            );
+            if (!response.ok) return null;
+            const commits = await response.json();
+            if (!commits.length) return null;
+            return this.formatRelativeAge(new Date(commits[0].commit.committer.date));
+        } catch {
+            return null;
+        }
+    }
+
+    formatRelativeAge(date) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const day = date.getDate();
+        const suffix = day === 1 || day === 21 || day === 31 ? 'st'
+                     : day === 2 || day === 22 ? 'nd'
+                     : day === 3 || day === 23 ? 'rd' : 'th';
+        const dateStr = `${months[date.getMonth()]} ${day}${suffix}`;
+
+        const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+        let relative;
+        if (seconds < 86400) relative = 'today';
+        else {
+            const days = Math.floor(seconds / 86400);
+            if (days === 1) relative = '1 day ago';
+            else if (days < 14) relative = `${days} days ago`;
+            else {
+                const weeks = Math.floor(days / 7);
+                if (weeks === 1) relative = '1 week ago';
+                else if (days < 60) relative = `${weeks} weeks ago`;
+                else {
+                    const mos = Math.floor(days / 30);
+                    if (mos === 1) relative = '1 month ago';
+                    else if (days < 365) relative = `${mos} months ago`;
+                    else {
+                        const years = Math.floor(days / 365);
+                        relative = years === 1 ? '1 year ago' : `${years} years ago`;
+                    }
+                }
+            }
+        }
+
+        return relative === 'today'
+            ? `Last updated ${dateStr}, today`
+            : `Last updated ${dateStr}, ${relative}`;
+    }
+
     // --- Stock Loading ---
 
     async loadStockFromGitHub() {
         this.setStockStatus('loading', 'Fetching stock from GitHub...');
         try {
-            const response = await fetch(STOCK_SOURCE.url);
+            const [response, age] = await Promise.all([
+                fetch(STOCK_SOURCE.url),
+                this.fetchFileAge(STOCK_SOURCE)
+            ]);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             const data = parseIni(text);
             this.mergeEngine.setStock(data);
             this.stockLoaded = true;
-            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys`);
+            const ageStr = age ? ` — ${age}` : '';
+            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys${ageStr}`);
             this.refreshAll();
         } catch (err) {
             this.setStockStatus('error', `Failed to load stock: ${err.message}`);
@@ -275,13 +332,17 @@ class StarMeldApp {
         statusEl.innerHTML = '<span class="status status-loading"><span class="spinner"></span>Fetching...</span>';
 
         try {
-            const response = await fetch(source.url);
+            const [response, age] = await Promise.all([
+                fetch(source.url),
+                this.fetchFileAge(source)
+            ]);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             const data = parseIni(text);
 
             this.mergeEngine.addImport(source.id, data);
-            statusEl.innerHTML = '<span class="status status-loaded">Loaded</span>';
+            const ageStr = age ? ` — ${age}` : '';
+            statusEl.innerHTML = `<span class="status status-loaded">Loaded${ageStr}</span>`;
 
             if (this.stockLoaded) {
                 const diff = this.mergeEngine.getCategoryDiff(source.id);
