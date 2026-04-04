@@ -355,6 +355,9 @@ class StarMeldApp {
                     }
                 }
                 statsEl.textContent = `${modifiedKeys.toLocaleString()} keys differ across ${modifiedCategories} categories`;
+
+                // Auto-generate description from modified groups
+                this._updatePackDescription(source.id);
             }
 
             // Add "Set as Default" button
@@ -380,12 +383,48 @@ class StarMeldApp {
         }
     }
 
+    _updatePackDescription(sourceId) {
+        const descEl = document.querySelector(`#pack-${sourceId} .pack-desc`);
+        if (!descEl) return;
+
+        const importData = this.mergeEngine.imports.get(sourceId);
+        if (!importData || !this.mergeEngine.stock) return;
+
+        const sharedGroups = this.categoryDB.getSharedGroupNames();
+        const groupCounts = new Map();
+
+        for (const [key, value] of importData) {
+            const stockValue = this.mergeEngine.stock.get(key);
+            if (stockValue === undefined || stockValue === value) continue;
+
+            const category = this.categoryDB.classify(key);
+            const group = this.categoryDB.getGroup(category) || 'Other';
+            const root = this.categoryDB.getRoot(category);
+
+            let displayGroup = group;
+            if (sharedGroups.has(group)) {
+                if (root === 'Names & Labels') displayGroup += ' Names';
+                else if (root === 'Descriptions & Text') displayGroup += ' Descriptions';
+            }
+
+            groupCounts.set(displayGroup, (groupCounts.get(displayGroup) || 0) + 1);
+        }
+
+        const sorted = [...groupCounts.entries()].sort((a, b) => b[1] - a[1]);
+        const summary = sorted.map(([g]) => g).join(', ');
+        descEl.textContent = summary || 'No modifications detected';
+    }
+
     disableSource(source) {
         this.enabledSources.delete(source.id);
         this.mergeEngine.removeImport(source.id);
         document.getElementById(`stats-${source.id}`).textContent = '';
         document.getElementById(`status-${source.id}`).innerHTML = '';
         document.getElementById(`actions-${source.id}`).innerHTML = '';
+
+        // Restore static description
+        const descEl = document.querySelector(`#pack-${source.id} .pack-desc`);
+        if (descEl) descEl.textContent = source.description;
 
         for (const [cat, src] of this.categorySelections) {
             if (src === source.id) this.categorySelections.delete(cat);
@@ -524,7 +563,7 @@ class StarMeldApp {
         }
     }
 
-    _renderGroup(group, allDiffs) {
+    _renderGroup(group, allDiffs, displayName) {
         let groupHasModifications = false;
         let groupModifiedCount = 0;
 
@@ -553,7 +592,7 @@ class StarMeldApp {
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'group-name';
-        nameSpan.textContent = group.name;
+        nameSpan.textContent = displayName || group.name;
 
         const statsSpan = document.createElement('span');
         statsSpan.className = 'group-stats';
@@ -691,6 +730,7 @@ class StarMeldApp {
 
         const allDiffs = this.mergeEngine.getAllCategoryDiffs();
         const hierarchy = this.categoryDB.getHierarchy();
+        const sharedGroups = this.categoryDB.getSharedGroupNames();
 
         container.innerHTML = '';
 
@@ -722,7 +762,12 @@ class StarMeldApp {
             rootHeader.classList.add('expanded');
 
             for (const group of groups) {
-                rootBody.appendChild(this._renderGroup(group, allDiffs));
+                let groupDisplayName = group.name;
+                if (sharedGroups.has(group.name)) {
+                    if (root === 'Names & Labels') groupDisplayName += ' Names';
+                    else if (root === 'Descriptions & Text') groupDisplayName += ' Descriptions';
+                }
+                rootBody.appendChild(this._renderGroup(group, allDiffs, groupDisplayName));
             }
 
             rootEl.appendChild(rootHeader);

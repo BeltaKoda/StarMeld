@@ -151,6 +151,24 @@ class CategoryDB {
         return [...rootMap.entries()].map(([root, groups]) => ({ root, groups }));
     }
     /**
+     * Get the set of group names that appear under more than one root.
+     * @returns {Set<string>}
+     */
+    getSharedGroupNames() {
+        const rootsByGroup = new Map();
+        for (const group of this.groups) {
+            const root = group.root || this.roots[0] || '';
+            if (!rootsByGroup.has(group.name)) rootsByGroup.set(group.name, new Set());
+            rootsByGroup.get(group.name).add(root);
+        }
+        const shared = new Set();
+        for (const [name, roots] of rootsByGroup) {
+            if (roots.size > 1) shared.add(name);
+        }
+        return shared;
+    }
+
+    /**
      * Get a flat list of all groups with categories (ignoring roots).
      * Used by code that doesn't need root-level grouping.
      * @returns {Array<{name: string, root: string, categories: Array<{name: string, description: string}>}>}
