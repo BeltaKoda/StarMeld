@@ -177,14 +177,11 @@ body {
     gap: 10px;
 }
 
-.pack-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    transition: border-color 0.2s, background 0.2s;
+.pack-age {
+    font-size: 0.85em;
+    opacity: 0.8;
+    margin-left: 4px;
+    font-weight: normal;
 }
 
 .pack-card:hover {

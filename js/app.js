@@ -275,13 +275,22 @@ class StarMeldApp {
         statusEl.innerHTML = '<span class="status status-loading"><span class="spinner"></span>Fetching...</span>';
 
         try {
-            const response = await fetch(source.url);
+            const [response, ageInfo] = await Promise.all([
+                fetch(source.url),
+                this.fetchFileAge(source.repo, source.path)
+            ]);
+
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             const data = parseIni(text);
 
             this.mergeEngine.addImport(source.id, data);
-            statusEl.innerHTML = '<span class="status status-loaded">Loaded</span>';
+            
+            let statusText = 'Loaded';
+            if (ageInfo) {
+                statusText += ` <span class="pack-age">(${ageInfo})</span>`;
+            }
+            statusEl.innerHTML = `<span class="status status-loaded">${statusText}</span>`;
 
             if (this.stockLoaded) {
                 const diff = this.mergeEngine.getCategoryDiff(source.id);
@@ -316,6 +325,48 @@ class StarMeldApp {
         } catch (err) {
             statusEl.innerHTML = `<span class="status status-error">Error: ${err.message}</span>`;
             this.enabledSources.delete(source.id);
+        }
+    }
+
+    /**
+     * Fetches the age of a file using the GitHub API.
+     * @param {string} repo - The 'owner/repo' string.
+     * @param {string} path - The relative path to the file in the repo.
+     * @returns {Promise<string|null>} A human-readable age string or null if failed.
+     */
+    async fetchFileAge(repo, path) {
+        try {
+            // We use the contents API which returns metadata including the last commit date via the sha/ref if we were using commits API, 
+            // but for simplicity and to avoid complexity, we'll use the commits API to get the latest commit for this file.
+            const response = await fetch(`https://api.github.com/repos/${repo}/commits?path=${path}&per_page=1`);
+            if (!response.ok) return null;
+
+            const commits = await response.json();
+            if (!commits || commits.length === 0) return null;
+
+            const lastCommitDate = new Date(commits[0].commit.committer.date);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - lastCommitDate) / 1000);
+
+            if (diffInSeconds < 60) return 'just now';
+            
+            const diffInMinutes = Math.floor(diffInSeconds / 60);
+            if (diffInMinutes < 60) return `${diffInMinutes}m old`;
+
+            const diffInHours = Math.floor(diffInMinutes / 60);
+            if (diffInHours < 24) return `${diffInHours}h old`;
+
+            const diffInDays = Math.floor(diffInHours / 24);
+            if (diffInDays < 30) return `${diffInDays}d old`;
+
+            const diffInMonths = Math.floor(diffInDays / 30);
+            if (diffInMonths < 12) return `${diffInMonths}m old`;
+
+            const diffInYears = Math.floor(diffInDays / 365);
+            return `${diffInYears}y old`;
+        } catch (err) {
+            console.error('Failed to fetch file age:', err);
+            return null;
         }
     }
 
