@@ -172,18 +172,55 @@ class StarMeldApp {
         document.getElementById('customiser-clear-btn').addEventListener('click', () => this.clearCustomisations());
     }
 
+    // --- File Age ---
+
+    async fetchFileAge(source) {
+        try {
+            const response = await fetch(
+                `https://api.github.com/repos/${source.repo}/commits?path=${source.path}&per_page=1`
+            );
+            if (!response.ok) return null;
+            const commits = await response.json();
+            if (!commits.length) return null;
+            return this.formatRelativeAge(new Date(commits[0].commit.committer.date));
+        } catch {
+            return null;
+        }
+    }
+
+    formatRelativeAge(date) {
+        const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+        if (seconds < 86400) return 'today';
+        const days = Math.floor(seconds / 86400);
+        if (days === 1) return '1 day old';
+        if (days < 14) return `${days} days old`;
+        const weeks = Math.floor(days / 7);
+        if (weeks === 1) return '1 week old';
+        if (days < 60) return `${weeks} weeks old`;
+        const months = Math.floor(days / 30);
+        if (months === 1) return '1 month old';
+        if (days < 365) return `${months} months old`;
+        const years = Math.floor(days / 365);
+        if (years === 1) return '1 year old';
+        return `${years} years old`;
+    }
+
     // --- Stock Loading ---
 
     async loadStockFromGitHub() {
         this.setStockStatus('loading', 'Fetching stock from GitHub...');
         try {
-            const response = await fetch(STOCK_SOURCE.url);
+            const [response, age] = await Promise.all([
+                fetch(STOCK_SOURCE.url),
+                this.fetchFileAge(STOCK_SOURCE)
+            ]);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             const data = parseIni(text);
             this.mergeEngine.setStock(data);
             this.stockLoaded = true;
-            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys`);
+            const ageStr = age ? ` — ${age}` : '';
+            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys${ageStr}`);
             this.refreshAll();
         } catch (err) {
             this.setStockStatus('error', `Failed to load stock: ${err.message}`);
@@ -275,13 +312,17 @@ class StarMeldApp {
         statusEl.innerHTML = '<span class="status status-loading"><span class="spinner"></span>Fetching...</span>';
 
         try {
-            const response = await fetch(source.url);
+            const [response, age] = await Promise.all([
+                fetch(source.url),
+                this.fetchFileAge(source)
+            ]);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             const data = parseIni(text);
 
             this.mergeEngine.addImport(source.id, data);
-            statusEl.innerHTML = '<span class="status status-loaded">Loaded</span>';
+            const ageStr = age ? ` — ${age}` : '';
+            statusEl.innerHTML = `<span class="status status-loaded">Loaded${ageStr}</span>`;
 
             if (this.stockLoaded) {
                 const diff = this.mergeEngine.getCategoryDiff(source.id);
