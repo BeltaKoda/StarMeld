@@ -2,7 +2,7 @@
 
 **Star Citizen Localization Merge Tool** -- combine category-specific language packs into a single `global.ini`.
 
-[![Open StarMeld](https://img.shields.io/badge/Open_StarMeld-Launch_Web_App-2563eb?style=for-the-badge)](https://beltakoda.github.io/StarMeld/) &nbsp; [beltakoda.github.io/StarMeld](https://beltakoda.github.io/StarMeld/)
+[![Open StarMeld](https://img.shields.io/badge/Open_StarMeld-2563eb?style=for-the-badge)](https://beltakoda.github.io/StarMeld/) &nbsp; [beltakoda.github.io/StarMeld](https://beltakoda.github.io/StarMeld/)
 
 Star Citizen loads exactly one `global.ini` file. Missing keys display as raw `@key_name` strings in-game, so partial files break the UI. Community language packs like [BeltaKoda's ScCompLangPackRemix](https://github.com/BeltaKoda/ScCompLangPackRemix) (component naming), [ExoAE's ScCompLangPack](https://github.com/ExoAE/ScCompLangPack), and [MrKraken's StarStrings](https://github.com/MrKraken/StarStrings) (mission text) each ship a complete file, making it impossible to combine them without a merge tool.
 
