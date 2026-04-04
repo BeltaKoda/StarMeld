@@ -174,7 +174,7 @@ class StarMeldApp {
 
     // --- Stock Loading ---
 
-    async loadStockFromGitHub() {
+   async loadStockFromGitHub() {
         this.setStockStatus('loading', 'Fetching stock from GitHub...');
         try {
             const response = await fetch(STOCK_SOURCE.url);
@@ -183,12 +183,267 @@ class StarMeldApp {
             const data = parseIni(text);
             this.mergeEngine.setStock(data);
             this.stockLoaded = true;
-            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys`);
+
+            // Fetch metadata for age
+            let updatedAt = null;
+            try {
+                const apiUrl = `https://api.github.com/repos/${STOCK_SOURCE.repo}/contents/${STOCK_SOURCE.path}?ref=${STOCK_SOURCE.branch}`;
+                const apiResponse = await fetch(apiUrl);
+                if (apiResponse.ok) {
+                    const apiData = await apiResponse.json();
+                    updatedAt = apiData.updated_at;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch GitHub metadata for stock age:', err);
+            }
+
+            let statusMessage = `Stock loaded: ${data.size.toLocaleString()} keys`;
+            if (updatedAt) {
+                statusMessage += ` <span class="source-age">(${this.calculateAgeString(updatedAt)})</span>`;
+            }
+            this.setStockStatus('loaded', statusMessage);
+
             this.refreshAll();
         } catch (err) {
             this.setStockStatus('error', `Failed to load stock: ${err.message}`);
             this.stockLoaded = false;
         }
+    }
+
+    async loadStockFromFile(file) {
+        this.setStockStatus('loading', 'Reading file...');
+        try {
+            const text = await readFileAsText(file);
+            const data = parseIni(text);
+            this.mergeEngine.setStock(data);
+            this.stockLoaded = true;
+
+            const ageString = this.calculateAgeString(file.lastModified);
+            this.setStockStatus('loaded', `Stock loaded: ${data.size.toLocaleString()} keys (${file.name}) <span class="source-age">(${ageString})</span>`);
+
+            this.refreshAll();
+        } catch (err) {
+            this.setStockStatus('error', `Failed to read file: ${err.message}`);
+            this.stockLoaded = false;
+        }
+    }
+
+    setStockStatus(state, message) {
+        const el = document.getElementById('stock-status');
+        el.className = `status status-${state}`;
+        el.innerHTML = state === 'loading'
+            ? `<span class="spinner"></span>${message}`
+            : message;
+    }
+
+    /**
+     * Get source definition by ID (for looking up repo/url).
+     */
+    getSourceDef(sourceId) {
+        return LANGUAGE_PACK_SOURCES.find(s => s.id === sourceId) || null;
+    }
+
+    renderPackList() {
+        const container = document.getElementById('github-packs');
+        container.innerHTML = '';
+
+        for (const source of LANGUAGE_PACK_SOURCES) {
+            const repoUrl = `https://github.com/${source.repo}`;
+            const card = document.createElement('div');
+            card.className = 'pack-card';
+            card.id = `pack-${source.id}`;
+            card.innerHTML = `
+                <input type="checkbox" id="check-${source.id}" ${source.defaultEnabled ? 'checked' : ''}>
+                <div class="pack-info">
+                    <div class="pack-name">${source.name}</div>
+                    <div class="pack-desc">${source.description}</div>
+                    <div class="pack-links">
+                        <a href="${repoUrl}" target="_blank">GitHub Repo</a>
+                        <a href="${source.url}" target="_blank">View INI File</a>
+                    </div>
+                    <div class="pack-stats" id="stats-${source.id}"></div>
+                    <div class="pack-status" id="status-${source.id}"></div>
+                </div>
+                <div id="actions-${source.id}"></div>
+            `;
+            container.appendChild(card);
+
+            const checkbox = card.querySelector(`#check-${source.id}`);
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    card.classList.add('enabled');
+                    this.enableSource(source);
+                } else {
+                    card.classList.remove('enabled');
+                    this.disableSource(source);
+                }
+            });
+
+            if (source.defaultEnabled) {
+                card.classList.add('enabled');
+                this.enableSource(source);
+            }
+        }
+    }
+
+    async enableSource(source) {
+        this.enabledSources.add(source.id);
+        const statusEl = document.getElementById(`status-${source.id}`);
+        const statsEl = document.getElementById(`stats-${source.id}`);
+        const actionsEl = document.getElementById(`actions-${source.id}`);
+
+        statusEl.innerHTML = '<span class="status status-loading"><span class="spinner"></span>Fetching...</span>';
+
+        try {
+            // 1. Fetch metadata from GitHub API to get the last updated timestamp
+            let updatedAt = null;
+            try {
+                const apiUrl = `https://api.github.com/repos/${source.repo}/contents/${source.path}?ref=${source.branch}`;
+                const apiResponse = await fetch(apiUrl);
+                if (apiResponse.ok) {
+                    const apiData = await apiResponse.json();
+                    updatedAt = apiData.updated_at;
+                }
+            } catch (apiErr) {
+                console.warn('Failed to fetch GitHub metadata for age:', apiErr);
+            }
+
+            // 2. Fetch the actual INI content
+            const response = await fetch(source.url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const text = await response.text();
+            const data = parseIni(text);
+
+            this.mergeEngine.addImport(source.id, data);
+            
+            // 3. Prepare status message with age if available
+            let statusMessage = '<span class="status status-loaded">Loaded</span>';
+            if (updatedAt) {
+                statusMessage += ` <span class="source-age">(${this.calculateAgeString(updatedAt)})</span>`;
+            }
+            statusEl.innerHTML = statusMessage;
+
+            if (this.stockLoaded) {
+                const diff = this.mergeEngine.getCategoryDiff(source.id);
+                let modifiedCategories = 0;
+                let modifiedKeys = 0;
+                for (const [, stats] of diff) {
+                    if (stats.modified > 0) {
+                        modifiedCategories++;
+                        modifiedKeys += stats.modified;
+                    }
+                }
+                statsEl.textContent = `${modifiedKeys.toLocaleString()} keys differ across ${modifiedCategories} categories`;
+            }
+
+            // Add "Set as Default" button
+            actionsEl.innerHTML = '';
+            const defaultBtn = document.createElement('button');
+            defaultBtn.className = 'set-default-btn';
+            defaultBtn.textContent = 'Set as Default for All Categories';
+            defaultBtn.addEventListener('click', () => this.setAllToSource(source.id));
+            actionsEl.appendChild(defaultBtn);
+
+            if (!this.priorityOrder.includes(source.id)) {
+                this.priorityOrder.push(source.id);
+            }
+
+            this.renderCategoryTree();
+            this.updateMergeButton();
+            this.renderPriorityList();
+            this.updatePriorityStats();
+            this.updatePriorityMergeButton();
+        } catch (err) {
+            statusEl.innerHTML = `<span class="status status-error">Error: ${err.message}</span>`;
+            this.enabledSources.delete(source.id);
+        }
+    }
+
+    /**
+     * Calculates a human-readable age string from an ISO timestamp or Unix timestamp.
+     * @param {string|number} timestamp 
+     * @returns {string} e.g., "5 months old"
+     */
+    calculateAgeString(timestamp) {
+        const updatedAt = new Date(timestamp);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - updatedAt) / 1000);
+
+        if (diffInSeconds < 60) return 'just now';
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes}m old`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}h old`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 30) return `${diffInDays}d old`;
+
+        const diffInMonths = Math.floor(diffInDays / 30);
+        if (diffInMonths < 12) return `${diffInMonths}m old`;
+
+        const diffInYears = Math.floor(diffInDays / 365);
+        return `${diffInYears}y old`;
+    }
+
+    disableSource(source) {
+        this.enabledSources.delete(source.id);
+        this.mergeEngine.removeImport(source.id);
+        document.getElementById(`stats-${source.id}`).textContent = '';
+        document.getElementById(`status-${source.id}`).innerHTML = '';
+        document.getElementById(`actions-${source.id}`).innerHTML = '';
+
+        for (const [cat, src] of this.categorySelections) {
+            if (src === source.id) this.categorySelections.delete(cat);
+        }
+        this.priorityOrder = this.priorityOrder.filter(id => id !== source.id);
+
+        this.renderCategoryTree();
+        this.updateMergeButton();
+        this.renderPriorityList();
+        this.updatePriorityStats();
+        this.updatePriorityMergeButton();
+    }
+
+    /**
+     * Set ALL categories to a given source (where it has modifications).
+     */
+    setAllToSource(sourceId) {
+        if (!this.stockLoaded) return;
+        const allDiffs = this.mergeEngine.getAllCategoryDiffs();
+        const hierarchy = this.categoryDB.getHierarchy();
+
+        for (const group of hierarchy) {
+            this.setGroupSelection(group.name, sourceId, allDiffs);
+        }
+
+        this.renderCategoryTree();
+        this.updateMergeButton();
+    }
+
+    async loadCustomPack(file) {
+        const id = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        try {
+            const text = await readFileAsText(file);
+            const data = parseIni(text);
+            this.mergeEngine.addImport(id, data);
+            this.customPacks.set(id, { name: file.name, data });
+            this.enabledSources.add(id);
+            this.priorityOrder.push(id);
+            this.renderCustomPacks();
+            this.renderCategoryTree();
+            this.updateMergeButton();
+            this.renderPriorityList();
+            this.updatePriorityStats();
+            this.updatePriorityMergeButton();
+
+            // Add age to custom pack card if possible (though we don't have a statusEl for it in renderCustomPacks)
+            // For now, let's just ensure the logic is consistent.
+        } catch (err) {
+            console.error('Failed to load custom pack:', err);
+        }
+    }
     }
 
     async loadStockFromFile(file) {
