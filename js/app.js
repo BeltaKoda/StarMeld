@@ -713,10 +713,59 @@ class StarMeldApp {
             nameEl.title = cat.description;
 
             const modEl = document.createElement('div');
-            modEl.className = 'category-modified' + (totalMods === 0 ? ' none' : '');
+            modEl.className = 'category-modified' + (totalMods === 0 ? ' none' : '') + (totalMods > 0 ? ' clickable' : '');
             modEl.textContent = totalMods > 0
                 ? `${totalMods} ${totalMods === 1 ? 'key' : 'keys'}`
                 : 'no changes';
+
+            const drilldownEl = document.createElement('div');
+            drilldownEl.className = 'category-drilldown';
+
+            if (totalMods > 0) {
+                modEl.addEventListener('click', () => {
+                    if (drilldownEl.classList.contains('expanded')) {
+                        drilldownEl.classList.remove('expanded');
+                        drilldownEl.innerHTML = '';
+                        return;
+                    }
+                    // Build table of modified keys for all sources with mods
+                    let html = '<table class="drilldown-table"><thead><tr><th>Key</th><th>Stock</th>';
+                    for (const s of sourcesWithMods) {
+                        html += `<th>${this.escapeHtml(this.getSourceDisplayName(s.id))}</th>`;
+                    }
+                    html += '</tr></thead><tbody>';
+
+                    // Get keys from the first source, then show all
+                    const allKeys = new Map();
+                    for (const s of sourcesWithMods) {
+                        const keys = this.mergeEngine.getModifiedKeysForCategory(s.id, cat.name);
+                        for (const entry of keys) {
+                            if (!allKeys.has(entry.key)) {
+                                allKeys.set(entry.key, { stockValue: entry.stockValue, packs: {} });
+                            }
+                            allKeys.get(entry.key).packs[s.id] = entry.importValue;
+                        }
+                    }
+
+                    for (const [key, data] of allKeys) {
+                        const truncate = (v) => v.length > 50 ? v.substring(0, 50) + '...' : v;
+                        html += `<tr><td class="drilldown-key">${this.escapeHtml(key)}</td>`;
+                        html += `<td class="drilldown-stock">${this.escapeHtml(truncate(data.stockValue))}</td>`;
+                        for (const s of sourcesWithMods) {
+                            const val = data.packs[s.id];
+                            if (val) {
+                                html += `<td class="drilldown-modified">${this.escapeHtml(truncate(val))}</td>`;
+                            } else {
+                                html += '<td class="drilldown-same">(same)</td>';
+                            }
+                        }
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table>';
+                    drilldownEl.innerHTML = html;
+                    drilldownEl.classList.add('expanded');
+                });
+            }
 
             const sourceEl = document.createElement('div');
             sourceEl.className = 'category-source';
@@ -755,6 +804,7 @@ class StarMeldApp {
             row.appendChild(modEl);
             row.appendChild(sourceEl);
             categoriesEl.appendChild(row);
+            categoriesEl.appendChild(drilldownEl);
         }
 
         groupEl.appendChild(headerEl);

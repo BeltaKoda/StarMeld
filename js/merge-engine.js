@@ -78,6 +78,28 @@ class MergeEngine {
     }
 
     /**
+     * Get the actual modified keys for a specific import and category.
+     * @param {string} importName - Source ID
+     * @param {string} categoryName - Category name
+     * @returns {Array<{key: string, stockValue: string, importValue: string}>}
+     */
+    getModifiedKeysForCategory(importName, categoryName) {
+        if (!this.stock) return [];
+        const importData = this.imports.get(importName);
+        if (!importData) return [];
+
+        const results = [];
+        for (const [key, stockValue] of this.stock) {
+            if (this.stockClassification.get(key) !== categoryName) continue;
+            const importValue = importData.get(key);
+            if (importValue !== undefined && importValue !== stockValue) {
+                results.push({ key, stockValue, importValue });
+            }
+        }
+        return results;
+    }
+
+    /**
      * Get diff info for all loaded imports.
      * @returns {Map<string, Map<string, {modified: number, total: number}>>}
      */

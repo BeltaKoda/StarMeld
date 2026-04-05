@@ -345,6 +345,69 @@ body {
     margin-top: 2px;
 }
 
+/* Category key drilldown */
+.category-modified.clickable {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.category-modified.clickable:hover {
+    color: var(--accent);
+}
+
+.category-drilldown {
+    display: none;
+    padding: 4px 0 8px 20px;
+    overflow-x: auto;
+}
+
+.category-drilldown.expanded {
+    display: block;
+}
+
+.drilldown-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.drilldown-table th {
+    text-align: left;
+    color: var(--text-disabled);
+    border-bottom: 1px solid var(--border);
+    padding: 3px 6px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.drilldown-table td {
+    padding: 2px 6px;
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drilldown-key {
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: 10px;
+}
+
+.drilldown-stock {
+    color: var(--text-disabled);
+}
+
+.drilldown-modified {
+    color: var(--accent);
+}
+
+.drilldown-same {
+    color: var(--text-disabled);
+    font-style: italic;
+}
+
 /* Category tree */
 .category-tree {
     display: flex;
