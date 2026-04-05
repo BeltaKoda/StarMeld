@@ -626,7 +626,7 @@ class StarMeldApp {
         groupEl.className = 'category-group';
 
         const headerEl = document.createElement('div');
-        headerEl.className = 'group-header' + (groupHasModifications ? ' expanded' : '');
+        headerEl.className = 'group-header';
 
         const arrowSpan = document.createElement('span');
         arrowSpan.className = 'arrow';
@@ -684,7 +684,7 @@ class StarMeldApp {
         }
 
         const categoriesEl = document.createElement('div');
-        categoriesEl.className = 'group-categories' + (groupHasModifications ? ' expanded' : '');
+        categoriesEl.className = 'group-categories';
 
         headerEl.addEventListener('click', (e) => {
             if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;

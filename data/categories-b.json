@@ -2,7 +2,7 @@
   "roots": ["Equipment & Items", "Game World"],
   "groups": [
     {
-      "name": "Ship Components",
+      "name": "Ship Component Names",
       "root": "Equipment & Items",
       "categories": [
         {
@@ -29,7 +29,13 @@
           "name": "Radars",
           "patterns": ["^item_Name(?:RADR|_RADR)_"],
           "description": "Radar and sensor array names"
-        },
+        }
+      ]
+    },
+    {
+      "name": "Ship Component Descriptions",
+      "root": "Equipment & Items",
+      "categories": [
         {
           "name": "Cooler Descriptions",
           "patterns": ["^item_Desc(?:COOL|_COOL)_"],
@@ -58,7 +64,7 @@
       ]
     },
     {
-      "name": "Ordnance",
+      "name": "Ordnance Names",
       "root": "Equipment & Items",
       "categories": [
         {
@@ -80,7 +86,13 @@
           "name": "Ground Missiles",
           "patterns": ["^item_Name(?:GMISL|_GMISL)_"],
           "description": "Ground vehicle missile names"
-        },
+        }
+      ]
+    },
+    {
+      "name": "Ordnance Descriptions",
+      "root": "Equipment & Items",
+      "categories": [
         {
           "name": "Missile Descriptions",
           "patterns": ["^item_Desc(?:MISL|_MISL)_"],
@@ -104,7 +116,7 @@
       ]
     },
     {
-      "name": "Weapons & Turrets",
+      "name": "Weapons & Turret Names",
       "root": "Equipment & Items",
       "categories": [
         {
@@ -116,7 +128,13 @@
           "name": "Turrets",
           "patterns": ["^item_Name(?:TURR|_TURR)_"],
           "description": "Turret mount and assembly names"
-        },
+        }
+      ]
+    },
+    {
+      "name": "Weapons & Turret Descriptions",
+      "root": "Equipment & Items",
+      "categories": [
         {
           "name": "Weapon Descriptions",
           "patterns": ["^item_Desc(?:WP_|WGN_|_WP_|_WGN_)"],

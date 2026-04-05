@@ -1,9 +1,9 @@
 {
-  "roots": ["Equipment", "World", "Descriptions"],
+  "roots": ["Equipment Names", "Equipment Descriptions", "World"],
   "groups": [
     {
       "name": "Ship Components",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Coolers",
@@ -34,7 +34,7 @@
     },
     {
       "name": "Ordnance",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Missiles",
@@ -60,7 +60,7 @@
     },
     {
       "name": "Weapons & Turrets",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Ship Weapons",
@@ -76,7 +76,7 @@
     },
     {
       "name": "Vehicles",
-      "root": "Equipment",
+      "root": "Equipment Names",
       "categories": [
         {
           "name": "Vehicle Names",
@@ -91,33 +91,75 @@
       ]
     },
     {
-      "name": "Items",
-      "root": "Equipment",
+      "name": "Ship Components",
+      "root": "Equipment Descriptions",
       "categories": [
         {
-          "name": "Clothing & Armor",
-          "patterns": ["^item_Name.*(?:armor|undersuit|helmet|shirt|pants|jacket|boots|shoes|gloves|hat|backpack)"],
-          "description": "Wearable clothing and armor piece names"
+          "name": "Cooler Descriptions",
+          "patterns": ["^item_Desc(?:COOL|_COOL)_"],
+          "description": "Ship cooling system descriptions"
         },
         {
-          "name": "Food & Drink",
-          "patterns": ["^item_Name(?:Food|Drink|_Food_|_Drink_)"],
-          "description": "Consumable food and beverage names"
+          "name": "Power Plant Descriptions",
+          "patterns": ["^item_Desc(?:POWR|_POWR)_"],
+          "description": "Ship power plant descriptions"
         },
         {
-          "name": "Commodities",
-          "patterns": ["^items_commodities_"],
-          "description": "Trade commodities and raw materials"
+          "name": "Quantum Drive Descriptions",
+          "patterns": ["^item_Desc(?:QDRV|_QDRV)_"],
+          "description": "Quantum drive descriptions"
         },
         {
-          "name": "Item Subtypes",
-          "patterns": ["^item_(?:SubType|Type)"],
-          "description": "Item type and subtype classifications"
+          "name": "Shield Descriptions",
+          "patterns": ["^item_Desc(?:SHLD|_SHLD)_"],
+          "description": "Shield generator descriptions"
         },
         {
-          "name": "Other Items",
-          "patterns": ["^item_Name"],
-          "description": "All other item names (flairs, tools, ammo, etc.)"
+          "name": "Radar Descriptions",
+          "patterns": ["^item_Desc(?:RADR|_RADR)_"],
+          "description": "Radar and sensor array descriptions"
+        }
+      ]
+    },
+    {
+      "name": "Ordnance",
+      "root": "Equipment Descriptions",
+      "categories": [
+        {
+          "name": "Missile Descriptions",
+          "patterns": ["^item_Desc(?:MISL|_MISL)_"],
+          "description": "Ship-launched missile descriptions"
+        },
+        {
+          "name": "Torpedo Descriptions",
+          "patterns": ["^item_Desc(?:TORP|_TORP)_"],
+          "description": "Ship-launched torpedo descriptions"
+        },
+        {
+          "name": "Bomb Descriptions",
+          "patterns": ["^item_Desc(?:BOMB|_BOMB)_"],
+          "description": "Ship-dropped bomb descriptions"
+        },
+        {
+          "name": "Ground Missile Descriptions",
+          "patterns": ["^item_Desc(?:GMISL|_GMISL)_"],
+          "description": "Ground vehicle missile descriptions"
+        }
+      ]
+    },
+    {
+      "name": "Weapons & Turrets",
+      "root": "Equipment Descriptions",
+      "categories": [
+        {
+          "name": "Weapon Descriptions",
+          "patterns": ["^item_Desc(?:WP_|WGN_|_WP_|_WGN_)"],
+          "description": "Ship-mounted gun and cannon descriptions"
+        },
+        {
+          "name": "Turret Descriptions",
+          "patterns": ["^item_Desc(?:TURR|_TURR)_"],
+          "description": "Turret mount and assembly descriptions"
         }
       ]
     },
@@ -164,6 +206,16 @@
           "name": "PU Narrative",
           "patterns": ["^PU_(?!UI_)"],
           "description": "Persistent Universe narrative text, NPC comms, and mission dialogue"
+        },
+        {
+          "name": "Dialogue",
+          "patterns": ["^Dlg_"],
+          "description": "NPC dialogue lines"
+        },
+        {
+          "name": "Reputation",
+          "patterns": ["^(?:Rep|.*_RepUI_)"],
+          "description": "Reputation standings and faction reputation UI"
         }
       ]
     },
@@ -282,117 +334,47 @@
           "name": "Text & Misc System",
           "patterns": ["^(?:text_|RN_|quantum_|interiormap_|SC_)"],
           "description": "System text, quantum travel, and miscellaneous labels"
-        }
-      ]
-    },
-    {
-      "name": "Ship Components",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Cooler Descriptions",
-          "patterns": ["^item_Desc(?:COOL|_COOL)_"],
-          "description": "Ship cooling system descriptions"
         },
         {
-          "name": "Power Plant Descriptions",
-          "patterns": ["^item_Desc(?:POWR|_POWR)_"],
-          "description": "Ship power plant descriptions"
-        },
-        {
-          "name": "Quantum Drive Descriptions",
-          "patterns": ["^item_Desc(?:QDRV|_QDRV)_"],
-          "description": "Quantum drive descriptions"
-        },
-        {
-          "name": "Shield Descriptions",
-          "patterns": ["^item_Desc(?:SHLD|_SHLD)_"],
-          "description": "Shield generator descriptions"
-        },
-        {
-          "name": "Radar Descriptions",
-          "patterns": ["^item_Desc(?:RADR|_RADR)_"],
-          "description": "Radar and sensor array descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Ordnance",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Missile Descriptions",
-          "patterns": ["^item_Desc(?:MISL|_MISL)_"],
-          "description": "Ship-launched missile descriptions"
-        },
-        {
-          "name": "Torpedo Descriptions",
-          "patterns": ["^item_Desc(?:TORP|_TORP)_"],
-          "description": "Ship-launched torpedo descriptions"
-        },
-        {
-          "name": "Bomb Descriptions",
-          "patterns": ["^item_Desc(?:BOMB|_BOMB)_"],
-          "description": "Ship-dropped bomb descriptions"
-        },
-        {
-          "name": "Ground Missile Descriptions",
-          "patterns": ["^item_Desc(?:GMISL|_GMISL)_"],
-          "description": "Ground vehicle missile descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Weapons & Turrets",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Weapon Descriptions",
-          "patterns": ["^item_Desc(?:WP_|WGN_|_WP_|_WGN_)"],
-          "description": "Ship-mounted gun and cannon descriptions"
-        },
-        {
-          "name": "Turret Descriptions",
-          "patterns": ["^item_Desc(?:TURR|_TURR)_"],
-          "description": "Turret mount and assembly descriptions"
+          "name": "Voice & Audio",
+          "patterns": ["^(?:DXSM_|DXSH_|PH_)"],
+          "description": "Voice line subtitles, audio cue text, and phoneme data"
         }
       ]
     },
     {
       "name": "Items",
-      "root": "Descriptions",
+      "root": "World",
       "categories": [
+        {
+          "name": "Clothing & Armor",
+          "patterns": ["^item_Name.*(?:armor|undersuit|helmet|shirt|pants|jacket|boots|shoes|gloves|hat|backpack)"],
+          "description": "Wearable clothing and armor piece names"
+        },
+        {
+          "name": "Food & Drink",
+          "patterns": ["^item_Name(?:Food|Drink|_Food_|_Drink_)"],
+          "description": "Consumable food and beverage names"
+        },
+        {
+          "name": "Commodities",
+          "patterns": ["^items_commodities_"],
+          "description": "Trade commodities and raw materials"
+        },
+        {
+          "name": "Item Subtypes",
+          "patterns": ["^item_(?:SubType|Type)"],
+          "description": "Item type and subtype classifications"
+        },
+        {
+          "name": "Other Items",
+          "patterns": ["^item_Name"],
+          "description": "All other item names (flairs, tools, ammo, etc.)"
+        },
         {
           "name": "Other Item Descriptions",
           "patterns": ["^item_Desc"],
           "description": "All item descriptions"
-        }
-      ]
-    },
-    {
-      "name": "Game Content",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Dialogue",
-          "patterns": ["^Dlg_"],
-          "description": "NPC dialogue lines"
-        },
-        {
-          "name": "Reputation",
-          "patterns": ["^(?:Rep|.*_RepUI_)"],
-          "description": "Reputation standings and faction reputation UI"
-        }
-      ]
-    },
-    {
-      "name": "Data & System",
-      "root": "Descriptions",
-      "categories": [
-        {
-          "name": "Voice & Audio",
-          "patterns": ["^(?:DXSM_|DXSH_|PH_)"],
-          "description": "Voice line subtitles, audio cue text, and phoneme data"
         }
       ]
     }
