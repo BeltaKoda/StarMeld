@@ -849,14 +849,13 @@ class StarMeldApp {
             }
 
             const rootBody = document.createElement('div');
-            rootBody.className = 'root-body expanded';
+            rootBody.className = 'root-body';
 
             rootHeader.addEventListener('click', (e) => {
                 if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
                 rootHeader.classList.toggle('expanded');
                 rootBody.classList.toggle('expanded');
             });
-            rootHeader.classList.add('expanded');
 
             for (const group of groups) {
                 let groupDisplayName = group.name;
