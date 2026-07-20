@@ -61,7 +61,7 @@ const LANGUAGE_PACK_SOURCES = [
         description: 'Mission text, blueprint pools, commodity fixes, and UI overflow corrections',
         repo: 'MrKraken/StarStrings',
         branch: 'master',
-        path: 'Data/Localization/english/global.ini',
+        path: 'src/For_Players/Data/Localization/english/global.ini',
         get url() {
             return `${GITHUB_RAW_BASE}/${this.repo}/${this.branch}/${this.path}`;
         },
